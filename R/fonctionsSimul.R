@@ -125,7 +125,6 @@ gen.simuHaplo = function (gen, pro, ancestors, simulNo = 5000, RecombRate=c(0,0)
 	returnsimuhaplo <- .Call("SPLUSSimulHaplo", gen@.Data, pro, length(pro), ancestors, length(ancestors), as.integer(simulNo), RecombRate, as.integer(Reconstruction), BP, WD, pathHap, pathMap, package="GENLIB")
 	
 	return(returnsimuhaplo)
-
 }
 
 

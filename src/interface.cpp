@@ -611,7 +611,6 @@ RcppExport SEXP SPLUSSimulHaplo(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, S
 	std::string SimulHaplo= simulhaplo(Genealogie, proposant, *nproposant, ancetre, *nancetre, *nSimul, probRecomb, &hapRef, WD);
 	Rcpp::CharacterVector ret = Rcpp::CharacterVector::create(SimulHaplo);
 	
-
 	if (*rec == 1){
 		std::string PathToHap = Rcpp::as<std::string>(sPathToHap);
 		std::string PathToMap = Rcpp::as<std::string>(sPathToMap);
@@ -620,8 +619,6 @@ RcppExport SEXP SPLUSSimulHaplo(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, S
 	}
 
 	return Rcpp::wrap(ret);
-
-
 }
 /*FONCTION D'INTERFACE POUR SPLUS*/
 
