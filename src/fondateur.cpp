@@ -148,7 +148,6 @@ std::string simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* 
 	std::ofstream outHaplo(stroutHaplo.c_str());
 	std::ofstream outAllHaplo(stroutAllHaplo.c_str());
 	
-	Rcpp::Rcout << *probRecomb << std::endl;
 	outHaplo << lSimul << ";" << lNProposant << "\n";
 	outAllHaplo << lSimul << ";" << lNProposant << "\n";
 
@@ -235,7 +234,6 @@ std::string simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* 
 	//Simulation
 	for(int csimul=0;csimul<lSimul; csimul++)
 	{
-		Rcpp::Rcout << "check2" << std::endl;
 		int clesSim= cleFixe;
 
 		for(int i=0;i<NOrdre;i++) {
@@ -250,14 +248,14 @@ std::string simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* 
 			if(Ordre[i]->pere != NULL){
 				outAllHaplo << nbRecomb1 <<",";
 				if(nbRecomb1 > 0){ //Recombination event in the father
-					nbRecomb1 = 1; // for now limiting to 1 crossover, getting an error with multiple
+					//nbRecomb1 = 1; // for now limiting to 1 crossover, getting an error with multiple
 					double tailleTot[nbRecomb1];
 					pHap = getRandomNumber(0);
 					outAllHaplo << pHap;
 
 					for(int j=0;j<nbRecomb1;j++){
 						tailleTot[j] = getRandomNumber(0);
-						outAllHaplo << "," << tailleTot[j];
+						outAllHaplo << std::fixed << "," << double(round(tailleTot[j]*precision)/precision);
 					}
 					std::sort(tailleTot,tailleTot + nbRecomb1);
 					makeRecombF(Ordre[i], hapRef, pHap, nbRecomb1, tailleTot, clesSim);
@@ -282,14 +280,14 @@ std::string simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* 
 			if(Ordre[i]->mere != NULL){
 				outAllHaplo << nbRecomb2 << ",";
 				if(nbRecomb2 > 0){ //Recombination event in mother
-					nbRecomb2 = 1; //for now limiting to 1 crossover
+					//nbRecomb2 = 1; //for now limiting to 1 crossover
 					double tailleTot[nbRecomb2];
 					pHap = getRandomNumber(0);
 					outAllHaplo << pHap;
 
 					for(int j=0;j<nbRecomb2;j++){
 						tailleTot[j] = getRandomNumber(0);
-						outAllHaplo << "," << tailleTot[j];
+						outAllHaplo << std::fixed << "," <<  double(round(tailleTot[j]*precision)/precision);
 					}
 					std::sort(tailleTot,tailleTot + nbRecomb2);
 					makeRecombM(Ordre[i], hapRef, pHap, nbRecomb2, tailleTot, clesSim);
@@ -355,7 +353,6 @@ std::string simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* 
 			}
 			outHaplo <<"{"<< csimul+1 <<";"<< NoeudPro[i]->nom << ";" << 0 << "}"<< hap.str() << std::endl;
 		}
-		Rcpp::Rcout << "check4" << std::endl;
 		//delete haplotypes from memory before next iteration of simulation
 		for( int i=cleFixe; i<clesSim; i++) {
 			haplotype* tmp = (*hapRef).find(i)->second; //hapKey.second;
@@ -500,7 +497,6 @@ double getRandomNumber(int exponential)
 
 void makeRecombF( CIndSimul *Ordre_tmp, std::unordered_map<int, haplotype*> *hapRef, double probHap, int nbRecomb, double *posRecomb, int &cle )
 {
-	Rcpp::Rcout << "check5.1" << std::endl;
 
     haplotype *perehap1, *perehap2;
 
@@ -523,7 +519,6 @@ void makeRecombF( CIndSimul *Ordre_tmp, std::unordered_map<int, haplotype*> *hap
 
 void makeRecombM( CIndSimul *Ordre_tmp, std::unordered_map<int, haplotype*> *hapRef, double probHap, int nbRecomb, double *posRecomb, int &cle )
 {
-	Rcpp::Rcout << "check5.2" << std::endl;
     haplotype *merehap1, *merehap2;
  
 	if (probHap < 0.5){
@@ -545,10 +540,8 @@ void makeRecombM( CIndSimul *Ordre_tmp, std::unordered_map<int, haplotype*> *hap
 void recombine(haplotype* hapBegin, haplotype* hapEnd, haplotype* hapChild, int nbRecomb, double* posRecomb )
 {
 	haplotype* hap_active = hapBegin;
-	Rcpp::Rcout << "check6.0" << std::endl;
 
 	for (int i=0; i < nbRecomb; i++){
-		Rcpp::Rcout << "check6.1" << std::endl;
 		
 		double position = posRecomb[i];
 		// de 0 a posRecomb on prend hapBegin
@@ -560,7 +553,6 @@ void recombine(haplotype* hapBegin, haplotype* hapEnd, haplotype* hapChild, int 
 			hapChild                 = hapChild->next_segment;
 			hap_active               = hap_active->next_segment;
 		}
-		Rcpp::Rcout << "check6.2" << std::endl;
 
 		// on ajoute la recomb pour hapChild
 		(*hapChild).hap          = hap_active->hap;
@@ -571,11 +563,9 @@ void recombine(haplotype* hapBegin, haplotype* hapEnd, haplotype* hapChild, int 
 			hap_active = hapEnd;
 		}
 		else hap_active = hapBegin;
-		Rcpp::Rcout << "check6.3" << std::endl;
 
 		// on met le pointeur de hapEnd a la bonne place.
 		while(position > hap_active->pos && hap_active->pos != -1) hap_active = hap_active->next_segment;
-		Rcpp::Rcout << "check6.4" << std::endl;
 
 		// on verifie que l'haplotype qui suit n'est pas le meme. Si oui, on met la nouvelle position.
 		if(hap_active->hap == hapChild->hap){
@@ -598,7 +588,6 @@ void recombine(haplotype* hapBegin, haplotype* hapEnd, haplotype* hapChild, int 
 		(*hapChild).pos          = hap_active->pos;
 		(*hapChild).fixe         = 0;
 	}
-	Rcpp::Rcout << "check6.9" << std::endl;
 
 }
 
