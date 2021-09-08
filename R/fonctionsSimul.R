@@ -98,8 +98,7 @@ gen.simuProb = function(gen, pro, statePro, ancestors, stateAncestors, simulNo=5
 }
 #print.it = F, 
 
-gen.simuHaplo = function (gen, pro, ancestors, simulNo = 5000, RecombRate=c(0,0), Reconstruction =0, BP=0, Hapfile=NULL, Mapfile=NULL){
-	print("checkpoint")
+gen.simuHaplo = function (gen, pro, ancestors, simulNo = 1, RecombRate=c(0,0), Reconstruction =0, BP=0, Hapfile=NULL, Mapfile=NULL, seed= 0, outDir = getwd()){
 	if(!is(gen, "GLgen"))
 		stop("Invalid parameter: gen must be an instance of Glgen (see gen.genealogy)")
 	if(!is(pro, "numeric") )
@@ -114,23 +113,26 @@ gen.simuHaplo = function (gen, pro, ancestors, simulNo = 5000, RecombRate=c(0,0)
 	#if(Reconstruction==1 & (Hapfile==NULL | Mapfile==NULL))
 		#stop("If reconstruction is set to 1 must specify the hap and map files")
 	if(Reconstruction==1 & BP==0)
-		stop("If reconstruction is set to 1, you must specify the size of the segment in MB")
+		stop("If reconstruction is set to 1, you must specify the size of the segment in BP")
 	if(Reconstruction==1 & (is.null(Hapfile) | is.null(Mapfile)))
 		stop("If reconstruction is set to 1, you must provide a hap file and map file")		
-	WD<-getwd()
+
 	if(Reconstruction == 1){
-		pathHap<-paste(WD,Hapfile,sep="/")
-		pathMap<-paste(WD,Mapfile,sep="/")
+		pathHap<-normalizePath(Hapfile, mustwork=TRUE)
+		pathMap<-paste(Mapfile, mustwork=TRUE)
 	}
 	else {
 		pathHap=""
 		pathMap=""
 	}
 
-	returnsimuhaplo <- .Call("SPLUSSimulHaplo", gen@.Data, pro, length(pro), ancestors, length(ancestors), as.integer(simulNo), RecombRate, as.integer(Reconstruction), BP, WD, pathHap, pathMap, package="GENLIB")
+	#Add in summary results, num meioses, num recombinations per simulation
+	numMeioses<-integer(simulNo)
+	numRecomb<-integer(simulNo)
+	simulCount<-c(1:simulNo)
+	.Call("SPLUSSimulHaplo", gen@.Data, pro, length(pro), ancestors, length(ancestors), as.integer(simulNo), RecombRate, as.integer(Reconstruction), BP, outDir, pathHap, pathMap, as.integer(seed), numRecomb, numMeioses, package="GENLIB")
 	
-	return(returnsimuhaplo)
-
+	return(cbind(simulNo=simulCount,numRecomb=numRecomb,numMeioses=numMeioses))
 }
 
 

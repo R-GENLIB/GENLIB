@@ -27,7 +27,6 @@ reordonnancement, creation d'ordre, ordre saut etc...
 
 using namespace std;
 
-#define R_NO_REMAP
 
 // TransGenCum[p][m][a] : chances d'avoir a all�les si le p�re a p
 // all�les mutants et la m�re m all�les mutants. (Cumulatif)

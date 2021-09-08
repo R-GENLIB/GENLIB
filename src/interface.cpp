@@ -31,8 +31,6 @@
 #include <RcppCommon.h>
 //#define EXPORTTYPE extern "C"  -> remplacer par RcppExport
 
-#define R_NO_REMAP
-#define R_NO_REMAP_RMATH
 
 /// Valeur textuel de l'enumeration typenoeud_t
 /** \sa typenoeud_t*/
@@ -577,19 +575,23 @@ RcppExport SEXP SPLUSCGCumuldirect(SEXP smatriceCG, SEXP slNProposant, SEXP splA
 /// **********
 //	DIVERS
 // *********
-RcppExport SEXP SPLUSSimulHaplo(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, SEXP sAncestors, SEXP sLenAncestors, SEXP snSimul, SEXP sProbRecomb, SEXP reconstruction, SEXP sBP, SEXP sWD, SEXP sPathToHap, SEXP sPathToMap)
+RcppExport SEXP SPLUSSimulHaplo(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, SEXP sAncestors, SEXP sLenAncestors, SEXP snSimul, SEXP sProbRecomb, SEXP reconstruction, SEXP sBP, SEXP sWD, SEXP sPathToHap, SEXP sPathToMap, SEXP sSeed, SEXP sNumRecomb, SEXP sNumMeioses)
 {
-	Rcpp::Rcout << "interface" << std::endl;
 	
-	int * Genealogie, * proposant, * ancetre, * nproposant, * nancetre, * nSimul, * rec;
+	int * Genealogie, * proposant, * ancetre, * nproposant, * nancetre, * nSimul, * rec, * seed, * NumMeioses, * NumRecomb;
 	double * probRecomb, *BP;
 
-		
+	Rcpp::IntegerVector lNumRecomb  ( sNumRecomb);
+	Rcpp::IntegerVector lNumMeioses ( sNumMeioses);	
+
 	Rcpp::IntegerVector lGenealogie	( sGenealogy );
 	Rcpp::IntegerVector lproposant	( sProbands );
 	Rcpp::IntegerVector lancetre	( sAncestors );
 	Rcpp::NumericVector lprobRecomb ( sProbRecomb );
 	
+	NumMeioses  = INTEGER   (sNumMeioses);
+	NumRecomb   = INTEGER   (sNumRecomb);
+	seed 		= INTEGER   (sSeed);
 	rec 		= INTEGER   (reconstruction);
 	Genealogie	= INTEGER	(lGenealogie);
 	proposant	= INTEGER	(lproposant);
@@ -608,17 +610,20 @@ RcppExport SEXP SPLUSSimulHaplo(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, S
 	hapRef[0]=hapVide;
 
 	std::string WD = Rcpp::as<std::string>(sWD);
-	std::string SimulHaplo= simulhaplo(Genealogie, proposant, *nproposant, ancetre, *nancetre, *nSimul, probRecomb, &hapRef, WD);
-	Rcpp::CharacterVector ret = Rcpp::CharacterVector::create(SimulHaplo);
+	simulhaplo(Genealogie, proposant, *nproposant, ancetre, *nancetre, *nSimul, probRecomb, &hapRef, WD, *seed, NumRecomb, NumMeioses);
 	
+	Rcpp::Rcout << WD << "/Proband_Haplotypes.txt generated \n";
+	Rcpp::Rcout << WD << "/All_nodes_haplotypes.txt generated \n";
+
 	if (*rec == 1){
 		std::string PathToHap = Rcpp::as<std::string>(sPathToHap);
 		std::string PathToMap = Rcpp::as<std::string>(sPathToMap);
 		std::string WD1 = WD;
 		reconstruct(WD,WD1+="/Proband_Haplotypes.txt",PathToHap, PathToMap, *BP);
+		Rcpp::Rcout << WD << "/reconstructed_haplotypes.txt generated \n";
 	}
 
-	return Rcpp::wrap(ret);
+	return R_NilValue;
 }
 /*FONCTION D'INTERFACE POUR SPLUS*/
 

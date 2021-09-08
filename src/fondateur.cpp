@@ -40,8 +40,6 @@ Calcul et Analyse de diverse valeur d�riv� du gene fondateur
 #include <unordered_map>
 //#include <boost/random/random_device.hpp>
 
-#define R_NO_REMAP
-//using namespace std;
 
 #ifdef NEG
 	#undef NEG
@@ -136,8 +134,9 @@ std::string dump_hapref(std::unordered_map<int,haplotype*> *hapRef)
 
 	\return 0 si la fonction est execut� avec succ�s 
 */ 
-std::string simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncetre, int lNAncetre,
-						int lSimul, double* probRecomb, std::unordered_map<int,haplotype*> *hapRef, std::string WD)
+void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncetre, int lNAncetre,
+						int lSimul, double* probRecomb, std::unordered_map<int,haplotype*> *hapRef, std::string WD, int seed,
+						int* NumRecomb, int* NumMeioses)
 {
 	double precision = 1000000000.0;
 	std::string stroutHaplo; 
@@ -150,6 +149,22 @@ std::string simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* 
 	
 	outHaplo << lSimul << ";" << lNProposant << "\n";
 	outAllHaplo << lSimul << ";" << lNProposant << "\n";
+
+	std::mt19937 my_rng;
+	std::uniform_real_distribution<> u_dist(0, 1);
+	std::poisson_distribution<int> p1_dist(probRecomb[0]);
+	std::poisson_distribution<int> p2_dist(probRecomb[1]);
+
+	if (seed==0){
+		std::random_device rdev;
+		uint32_t random_seed = rdev();
+		my_rng = std::mt19937(random_seed);
+		Rcpp::Rcout << "seed: " << random_seed << "\n";
+	}
+	else{
+		Rcpp::Rcout << "seed: " << seed;
+		my_rng = std::mt19937(seed);
+	}
 
 	try{
 
@@ -237,10 +252,13 @@ std::string simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* 
 		int clesSim= cleFixe;
 
 		for(int i=0;i<NOrdre;i++) {
-			Rcpp::Rcout << Ordre[i]->nom << std::endl;
 
-			int nbRecomb1 = getNumberRec(probRecomb, 1); //number of recombination events of father's chromosomes
-			int nbRecomb2 = getNumberRec(probRecomb, 2); //number of recombination events of mother's chromosomes
+			int nbRecomb1 = p1_dist(my_rng); //number of recombination events of father's chromosomes
+			int nbRecomb2 = p2_dist(my_rng); //number of recombination events of mother's chromosomes
+			
+			NumRecomb[csimul] += nbRecomb1 + nbRecomb2;
+			NumMeioses[csimul] += 2;
+
 			double pHap;
 
 			outAllHaplo <<"{"<< csimul+1 <<";"<< Ordre[i]->nom <<";" ;
@@ -248,13 +266,12 @@ std::string simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* 
 			if(Ordre[i]->pere != NULL){
 				outAllHaplo << nbRecomb1 <<",";
 				if(nbRecomb1 > 0){ //Recombination event in the father
-					//nbRecomb1 = 1; // for now limiting to 1 crossover, getting an error with multiple
 					double tailleTot[nbRecomb1];
-					pHap = getRandomNumber(0);
+					pHap = u_dist(my_rng);
 					outAllHaplo << pHap;
 
 					for(int j=0;j<nbRecomb1;j++){
-						tailleTot[j] = getRandomNumber(0);
+						tailleTot[j] = u_dist(my_rng);
 						outAllHaplo << std::fixed << "," << double(round(tailleTot[j]*precision)/precision);
 					}
 					std::sort(tailleTot,tailleTot + nbRecomb1);
@@ -262,7 +279,7 @@ std::string simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* 
 					outAllHaplo << ";";
 				}			
 				else{ //If no recombination just pass one of father's chromosomes down 
-					pHap = getRandomNumber(0);
+					pHap = u_dist(my_rng);
 					outAllHaplo << pHap << ",0;";
 					if(pHap<0.50){
 						Ordre[i]->clesHaplo_1=Ordre[i]->pere->clesHaplo_1;
@@ -280,13 +297,12 @@ std::string simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* 
 			if(Ordre[i]->mere != NULL){
 				outAllHaplo << nbRecomb2 << ",";
 				if(nbRecomb2 > 0){ //Recombination event in mother
-					//nbRecomb2 = 1; //for now limiting to 1 crossover
 					double tailleTot[nbRecomb2];
-					pHap = getRandomNumber(0);
+					pHap = u_dist(my_rng);
 					outAllHaplo << pHap;
 
 					for(int j=0;j<nbRecomb2;j++){
-						tailleTot[j] = getRandomNumber(0);
+						tailleTot[j] = u_dist(my_rng);
 						outAllHaplo << std::fixed << "," <<  double(round(tailleTot[j]*precision)/precision);
 					}
 					std::sort(tailleTot,tailleTot + nbRecomb2);
@@ -294,7 +310,7 @@ std::string simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* 
 					outAllHaplo << "}";
 				}	
 				else{
-					pHap = getRandomNumber(0);
+					pHap = u_dist(my_rng);
 					outAllHaplo << pHap << ",0}";
 					if(pHap<0.50){
 						Ordre[i]->clesHaplo_2=Ordre[i]->mere->clesHaplo_1;
@@ -380,8 +396,6 @@ std::string simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* 
 	delete tmp;
 	}
 	
-	std::string retvalue("Proband_Haplotypes.txt generated"); 
-	return retvalue;
 
  } catch(std::exception &ex) {
  	forward_exception_to_r(ex);
@@ -390,40 +404,40 @@ std::string simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* 
  } 
 }
 
-int getNumberRec(double* probRecomb, int sex)
-{
-//  #if defined _WIN32 || defined _WIN64
-//    std::mt19937 gen(time(0));
-//  #else
-static  std::random_device gen;
-//  #endif
-  if(sex==1) {
-   std::poisson_distribution<int> distribution (probRecomb[0]);
-   return distribution(gen);
-  }
-  else {
-   std::poisson_distribution<int> distribution (probRecomb[1]);
-   return distribution(gen);
-  }
-}
+// int getNumberRec(double* probRecomb, int sex, int seed)
+// {
+// //  #if defined _WIN32 || defined _WIN64
+// //    std::mt19937 gen(time(0));
+// //  #else
+// static  std::mt19937 mt_rand;
+// //  #endif
+//   if(sex==1) {
+//    std::poisson_distribution<int> distribution (probRecomb[0]);
+//    return distribution(mt_rand);
+//   }
+//   else {
+//    std::poisson_distribution<int> distribution (probRecomb[1]);
+//    return distribution(gen);
+//   }
+// }
 
-double getRandomNumber(int exponential)
-{
-	static std::random_device gen;
-	if(exponential == 0) {
-    //#if defined _WIN32 || defined _WIN64
-      //std::mt19937 gen(time(0));
-    //#else
-    //#endif
-    return double(gen())/double(gen.max());
+// double getRandomNumber(int exponential)
+// {
+// 	static std::random_device gen;
+// 	if(exponential == 0) {
+//     //#if defined _WIN32 || defined _WIN64
+//       //std::mt19937 gen(time(0));
+//     //#else
+//     //#endif
+//     return double(gen())/double(gen.max());
 	
-  }
-  else {
-//    std::default_random_engine position_generator;
-    std::exponential_distribution<double> alea_Exp(10.0);
-    return alea_Exp( gen );//position_generator );
-  }
-}
+//   }
+//   else {
+// //    std::default_random_engine position_generator;
+//     std::exponential_distribution<double> alea_Exp(10.0);
+//     return alea_Exp( gen );//position_generator );
+//   }
+// }
 
 //no longer call this function in simulhaplo, do it directly in the main loop of simulhaplo
 // int descendreHaplotypes(CIndSimul* Ordre_tmp, double probHap)
@@ -594,25 +608,25 @@ void recombine(haplotype* hapBegin, haplotype* hapEnd, haplotype* hapChild, int 
 
 bool reconstruct(std::string WD, const std::string &simufilename,const std::string &hapfilename, const std::string &SNPposfilename,const int &BPsize){
 
+	try{
+
     std::ifstream in (simufilename.c_str());
     if(!in)
     {
-        std::cerr << "Cannot open the proband_haplotypes file : " << simufilename << std::endl;
-        return false;
+        Rcpp::Rcout << "Cannot open the proband_haplotypes file : " << simufilename << std::endl;
     }
 
 	WD += "/reconstructed_haplotypes.txt";
     std::ofstream reconstructed(WD.c_str());
     if(!reconstructed.is_open()){
-        std::cerr<<"can't open output file"<< WD << std::endl;
+        std::cerr<<"cant open output file"<< WD << std::endl;
     }
-    std::cout<<4;
+
     std::vector<int> SNPpos = readSNPpos(SNPposfilename);
     int numSNPs = SNPpos.size();
-    std::cout<<5;
+
     std::unordered_map <float, std::string> haploseqs;
     ancestralseq(hapfilename, haploseqs);
-    std::cout<<6;
 
     std::string line;
     std::getline(in,line); //waste first line
@@ -701,7 +715,14 @@ bool reconstruct(std::string WD, const std::string &simufilename,const std::stri
 
     in.close();
     reconstructed.close();
-    return true;    
+    return true;
+
+	} catch(std::exception &ex) {
+ 	forward_exception_to_r(ex);
+ 	} catch(...){
+ 	::Rf_error("c++ exception (unknown reason)"); 
+ 	}
+	return false; 
 }
 
 bool ancestralseq(const std::string &fileName, std::unordered_map<float, std::string> &haploseqs)
@@ -710,7 +731,7 @@ bool ancestralseq(const std::string &fileName, std::unordered_map<float, std::st
 
     if(!in)
     {
-        std::cerr << "Cannot open the haplotype file : "<<fileName<<std::endl;
+        Rcpp::Rcout << "Cannot open the haplotype file : "<<fileName<<std::endl;
         return false;
     }
 
@@ -727,11 +748,12 @@ bool ancestralseq(const std::string &fileName, std::unordered_map<float, std::st
 }
 
 std::vector<int> readSNPpos(const std::string &fileName){
-    std::ifstream in(fileName.c_str());
+    
+	std::ifstream in(fileName.c_str());
     
     if(!in)
     {
-        std::cerr << "Cannot open the map file : "<<fileName<<std::endl;
+        Rcpp::Rcout << "Cannot open the map file : "<<fileName<<std::endl;
     }
 
     std::vector<int> vec(std::istream_iterator<int>(in), {});
