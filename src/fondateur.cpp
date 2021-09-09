@@ -266,7 +266,7 @@ void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncet
 			if(Ordre[i]->pere != NULL){
 				outAllHaplo << nbRecomb1 <<",";
 				if(nbRecomb1 > 0){ //Recombination event in the father
-					double tailleTot[nbRecomb1];
+					double tailleTot[20];
 					pHap = u_dist(my_rng);
 					outAllHaplo << pHap;
 
@@ -297,7 +297,7 @@ void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncet
 			if(Ordre[i]->mere != NULL){
 				outAllHaplo << nbRecomb2 << ",";
 				if(nbRecomb2 > 0){ //Recombination event in mother
-					double tailleTot[nbRecomb2];
+					double tailleTot[20];
 					pHap = u_dist(my_rng);
 					outAllHaplo << pHap;
 
@@ -619,7 +619,7 @@ bool reconstruct(std::string WD, const std::string &simufilename,const std::stri
 	WD += "/reconstructed_haplotypes.txt";
     std::ofstream reconstructed(WD.c_str());
     if(!reconstructed.is_open()){
-        std::cerr<<"cant open output file"<< WD << std::endl;
+        Rcpp::Rcout<<"Can't open output file to write to. Check permissions: \n"<< WD << "\n";
     }
 
     std::vector<int> SNPpos = readSNPpos(SNPposfilename);

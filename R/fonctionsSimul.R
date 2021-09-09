@@ -118,8 +118,8 @@ gen.simuHaplo = function (gen, pro, ancestors, simulNo = 1, RecombRate=c(0,0), R
 		stop("If reconstruction is set to 1, you must provide a hap file and map file")		
 
 	if(Reconstruction == 1){
-		pathHap<-normalizePath(Hapfile, mustwork=TRUE)
-		pathMap<-paste(Mapfile, mustwork=TRUE)
+		pathHap<-normalizePath(Hapfile, mustWork=TRUE)
+		pathMap<-paste(Mapfile, mustWork=TRUE)
 	}
 	else {
 		pathHap=""

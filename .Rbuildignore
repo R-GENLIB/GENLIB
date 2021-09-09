@@ -1,5 +1,7 @@
 .gitignore
 /docs
+/src/.vscode
+.vscode
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
