@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">GENLIB</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.9</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.5</span>
       </span>
     </div>
 
@@ -184,16 +184,16 @@
 <span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span><span class='op'>(</span><span class='va'>simu_1000a</span><span class='op'>)</span>
 </div><div class='output co'>#&gt; simu_1000a
 #&gt;    0    1 
-#&gt; 1706  294 </div><div class='input'><span class='co'># Number of alleles received by all probants at each simulation</span>
+#&gt; 1679  321 </div><div class='input'><span class='co'># Number of alleles received by all probants at each simulation</span>
 <span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colSums.html'>colSums</a></span><span class='op'>(</span><span class='va'>simu_1000a</span><span class='op'>)</span><span class='op'>)</span>
 </div><div class='output co'>#&gt; 
 #&gt;   0   1   2 
-#&gt; 726 254  20 </div><div class='input'><span class='co'># Number of alleles received by each probant</span>
+#&gt; 699 281  20 </div><div class='input'><span class='co'># Number of alleles received by each probant</span>
 <span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span><span class='op'>(</span><span class='va'>simu_1000a</span><span class='op'>[</span><span class='fl'>1</span>,<span class='op'>]</span>,<span class='va'>simu_1000a</span><span class='op'>[</span><span class='fl'>2</span>,<span class='op'>]</span><span class='op'>)</span>
 </div><div class='output co'>#&gt;    
 #&gt;       0   1
-#&gt;   0 726 210
-#&gt;   1  44  20</div><div class='input'>
+#&gt;   0 699 233
+#&gt;   1  48  20</div><div class='input'>
 <span class='co'># A case where subjects are limited to one copy compared to what is normally expected</span>
 <span class='va'>max1Allreceived</span><span class='op'>&lt;-</span><span class='fu'><a href='https://rdrr.io/r/base/matrix.html'>matrix</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/rep.html'>rep</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>1</span>,<span class='fl'>0.5</span>,<span class='fl'>0</span>,<span class='fl'>0.5</span>,<span class='fl'>0.25</span>,<span class='fl'>0</span>,<span class='fl'>0</span>,<span class='fl'>0</span>,<span class='fl'>0</span>,<span class='fl'>1</span>,<span class='fl'>1</span>,<span class='fl'>1</span>,<span class='fl'>1</span>,<span class='fl'>1</span>,<span class='fl'>1</span>,<span class='fl'>1</span>,<span class='fl'>1</span>,<span class='fl'>1</span><span class='op'>)</span>, <span class='fl'>2</span><span class='op'>)</span> , nrow<span class='op'>=</span><span class='fl'>3</span>, ncol<span class='op'>=</span><span class='fl'>12</span><span class='op'>)</span>  
 <span class='fu'><a href='gen.graph.html'>gen.graph</a></span><span class='op'>(</span><span class='va'>genJi</span><span class='op'>)</span>
@@ -205,27 +205,27 @@
 <span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span><span class='op'>(</span><span class='va'>simu_1000b</span><span class='op'>)</span> 
 </div><div class='output co'>#&gt; simu_1000b
 #&gt;     0     1 
-#&gt; 17727  2273 </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span><span class='op'>(</span><span class='va'>simu_1000original</span><span class='op'>)</span> 
+#&gt; 17630  2370 </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span><span class='op'>(</span><span class='va'>simu_1000original</span><span class='op'>)</span> 
 </div><div class='output co'>#&gt; simu_1000original
 #&gt;     0     1     2 
-#&gt; 17567  2288   145 </div><div class='input'><span class='co'># Number of alleles received by all probants at each simulation</span>
+#&gt; 17493  2320   187 </div><div class='input'><span class='co'># Number of alleles received by all probants at each simulation</span>
 <span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colSums.html'>colSums</a></span><span class='op'>(</span><span class='va'>simu_1000b</span><span class='op'>)</span><span class='op'>)</span> 
 </div><div class='output co'>#&gt; 
 #&gt;    0    1    2 
-#&gt; 7893 1941  166 </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colSums.html'>colSums</a></span><span class='op'>(</span><span class='va'>simu_1000original</span><span class='op'>)</span><span class='op'>)</span> 
+#&gt; 7812 2006  182 </div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colSums.html'>colSums</a></span><span class='op'>(</span><span class='va'>simu_1000original</span><span class='op'>)</span><span class='op'>)</span> 
 </div><div class='output co'>#&gt; 
 #&gt;    0    1    2    3    4 
-#&gt; 7783 1897  281   37    2 </div><div class='input'><span class='co'># Number of alleles received by each probant</span>
+#&gt; 7726 1903  323   47    1 </div><div class='input'><span class='co'># Number of alleles received by each probant</span>
 <span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span><span class='op'>(</span><span class='va'>simu_1000b</span><span class='op'>[</span><span class='fl'>1</span>,<span class='op'>]</span>,<span class='va'>simu_1000b</span><span class='op'>[</span><span class='fl'>2</span>,<span class='op'>]</span><span class='op'>)</span>
 </div><div class='output co'>#&gt;    
 #&gt;        0    1
-#&gt;   0 7893 1291
-#&gt;   1  650  166</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span><span class='op'>(</span><span class='va'>simu_1000original</span><span class='op'>[</span><span class='fl'>1</span>,<span class='op'>]</span>,<span class='va'>simu_1000original</span><span class='op'>[</span><span class='fl'>2</span>,<span class='op'>]</span><span class='op'>)</span> 
+#&gt;   0 7812 1293
+#&gt;   1  713  182</div><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span><span class='op'>(</span><span class='va'>simu_1000original</span><span class='op'>[</span><span class='fl'>1</span>,<span class='op'>]</span>,<span class='va'>simu_1000original</span><span class='op'>[</span><span class='fl'>2</span>,<span class='op'>]</span><span class='op'>)</span> 
 </div><div class='output co'>#&gt;    
 #&gt;        0    1    2
-#&gt;   0 7783 1263   22
-#&gt;   1  634  177    7
-#&gt;   2   82   30    2</div></pre>
+#&gt;   0 7726 1250   26
+#&gt;   1  653  185   12
+#&gt;   2  112   35    1</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

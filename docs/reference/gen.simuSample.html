@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">GENLIB</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.9</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.5</span>
       </span>
     </div>
 
@@ -163,17 +163,17 @@
 <span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span><span class='op'>(</span><span class='va'>simu_1000</span><span class='op'>)</span>
 </div><div class='output co'>#&gt; simu_1000
 #&gt;    0    1    2 
-#&gt; 1244  637  119 </div><div class='input'><span class='co'># Number of alleles received by simulation</span>
+#&gt; 1288  614   98 </div><div class='input'><span class='co'># Number of alleles received by simulation</span>
 <span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colSums.html'>colSums</a></span><span class='op'>(</span><span class='va'>simu_1000</span><span class='op'>)</span><span class='op'>)</span>
 </div><div class='output co'>#&gt; 
 #&gt;   0   1   2   3   4 
-#&gt; 361 442 161  33   3 </div><div class='input'><span class='co'># Number of alleles received by each probant</span>
+#&gt; 399 429 137  33   2 </div><div class='input'><span class='co'># Number of alleles received by each probant</span>
 <span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span><span class='op'>(</span><span class='va'>simu_1000</span><span class='op'>[</span><span class='fl'>1</span>,<span class='op'>]</span>,<span class='va'>simu_1000</span><span class='op'>[</span><span class='fl'>2</span>,<span class='op'>]</span><span class='op'>)</span>
 </div><div class='output co'>#&gt;    
 #&gt;       0   1   2
-#&gt;   0 361 362  73
-#&gt;   1  80  81  21
-#&gt;   2   7  12   3</div><div class='input'>
+#&gt;   0 399 343  57
+#&gt;   1  86  76  27
+#&gt;   2   4   6   2</div><div class='input'>
 <span class='fu'><a href='https://rdrr.io/r/utils/data.html'>data</a></span><span class='op'>(</span><span class='va'>geneaJi</span><span class='op'>)</span> 
 <span class='va'>genJi</span><span class='op'>&lt;-</span><span class='fu'><a href='gen.genealogy.html'>gen.genealogy</a></span><span class='op'>(</span><span class='va'>geneaJi</span><span class='op'>)</span> 
 <span class='va'>simu_5000</span><span class='op'>&lt;-</span><span class='fu'>gen.simuSample</span><span class='op'>(</span><span class='va'>genJi</span>, pro<span class='op'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>1</span>,<span class='fl'>29</span><span class='op'>)</span>, ancestors<span class='op'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>20</span>,<span class='fl'>25</span><span class='op'>)</span>, stateAncestors<span class='op'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>2</span>,<span class='fl'>1</span><span class='op'>)</span>,
@@ -182,17 +182,17 @@
 <span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span><span class='op'>(</span><span class='va'>simu_5000</span><span class='op'>)</span>
 </div><div class='output co'>#&gt; simu_5000
 #&gt;    0    1    2 
-#&gt; 6221 3151  628 </div><div class='input'><span class='co'># Number of alleles received by simulation</span>
+#&gt; 6166 3233  601 </div><div class='input'><span class='co'># Number of alleles received by simulation</span>
 <span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span><span class='op'>(</span><span class='fu'><a href='https://rdrr.io/r/base/colSums.html'>colSums</a></span><span class='op'>(</span><span class='va'>simu_5000</span><span class='op'>)</span><span class='op'>)</span>
 </div><div class='output co'>#&gt; 
 #&gt;    0    1    2    3    4 
-#&gt; 1816 2138  885  145   16 </div><div class='input'><span class='co'># Number of alleles received by each probant</span>
+#&gt; 1793 2178  845  169   15 </div><div class='input'><span class='co'># Number of alleles received by each probant</span>
 <span class='fu'><a href='https://rdrr.io/r/base/table.html'>table</a></span><span class='op'>(</span><span class='va'>simu_5000</span><span class='op'>[</span><span class='fl'>1</span>,<span class='op'>]</span>,<span class='va'>simu_5000</span><span class='op'>[</span><span class='fl'>2</span>,<span class='op'>]</span><span class='op'>)</span>
 </div><div class='output co'>#&gt;    
 #&gt;        0    1    2
-#&gt;   0 1816 1718  409
-#&gt;   1  420  434  106
-#&gt;   2   42   39   16</div><div class='input'>
+#&gt;   0 1793 1723  362
+#&gt;   1  455  443  140
+#&gt;   2   40   29   15</div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

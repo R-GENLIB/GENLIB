@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">GENLIB</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.9</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.5</span>
       </span>
     </div>
 
@@ -180,45 +180,45 @@
 <span class='fu'>gen.simuProb</span><span class='op'>(</span><span class='va'>genJi</span>, pro<span class='op'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>1</span>,<span class='fl'>29</span><span class='op'>)</span>, statePro<span class='op'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>1</span>,<span class='fl'>2</span><span class='op'>)</span>, ancestors<span class='op'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>20</span>,<span class='fl'>25</span><span class='op'>)</span>, stateAncestors<span class='op'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>2</span>,<span class='fl'>1</span><span class='op'>)</span>,
              simulNo<span class='op'>=</span><span class='fl'>10000</span><span class='op'>)</span>
 </div><div class='output co'>#&gt; $joint
-#&gt; [1] 0.0208
+#&gt; [1] 0.0216
 #&gt; 
 #&gt; $marginal
 #&gt;      1     29 
-#&gt; 0.1922 0.1040 
+#&gt; 0.1929 0.1016 
 #&gt; 
 #&gt; $Nprobands
 #&gt;      0      1      2 
-#&gt; 0.7246 0.2546 0.0208 
+#&gt; 0.7271 0.2513 0.0216 
 #&gt; </div><div class='input'><span class='co'># Probability that subjects 1 and 29 get 1 segment from ancestors 25,</span>
 <span class='co'># knowing the segment has a male</span>
 <span class='co'># recombination rate of 0.02 and a female recombination rate of 0.04.</span>
 <span class='fu'>gen.simuProb</span><span class='op'>(</span><span class='va'>genJi</span>, pro<span class='op'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>1</span>,<span class='fl'>29</span><span class='op'>)</span>, statePro<span class='op'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>1</span>,<span class='fl'>1</span><span class='op'>)</span>, ancestors<span class='op'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>25</span><span class='op'>)</span>, stateAncestors<span class='op'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>1</span><span class='op'>)</span>,
              simulNo<span class='op'>=</span><span class='fl'>10000</span>, probRecomb <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.02</span>, <span class='fl'>0.04</span><span class='op'>)</span><span class='op'>)</span>
 </div><div class='output co'>#&gt; $joint
-#&gt; [1] 0.0123
+#&gt; [1] 0.012
 #&gt; 
 #&gt; $marginal
 #&gt;      1     29 
-#&gt; 0.0623 0.1338 
+#&gt; 0.0663 0.1338 
 #&gt; 
 #&gt; $Nprobands
 #&gt;      0      1      2 
-#&gt; 0.8162 0.1715 0.0123 
+#&gt; 0.8119 0.1761 0.0120 
 #&gt; </div><div class='input'><span class='co'># Probability that subjects 1 and 29 get 1 and 2 alleles from ancestors 20 and 25,</span>
 <span class='co'># that have themselves 2 and 1 and knowing that homozygous people have a survival rate</span>
 <span class='co'># of 0.50.</span>
 <span class='fu'>gen.simuProb</span><span class='op'>(</span><span class='va'>genJi</span>, pro<span class='op'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>1</span>,<span class='fl'>29</span><span class='op'>)</span>, statePro<span class='op'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>1</span>,<span class='fl'>2</span><span class='op'>)</span>, ancestors<span class='op'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>20</span>,<span class='fl'>25</span><span class='op'>)</span>, stateAncestors<span class='op'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>2</span>,<span class='fl'>1</span><span class='op'>)</span>,
              simulNo<span class='op'>=</span><span class='fl'>10000</span>, probSurvival<span class='op'>=</span><span class='fl'>0.5</span><span class='op'>)</span>
 </div><div class='output co'>#&gt; $joint
-#&gt; [1] 0.008
+#&gt; [1] 0.0075
 #&gt; 
 #&gt; $marginal
 #&gt;      1     29 
-#&gt; 0.1700 0.0461 
+#&gt; 0.1614 0.0467 
 #&gt; 
 #&gt; $Nprobands
 #&gt;      0      1      2 
-#&gt; 0.7919 0.2001 0.0080 
+#&gt; 0.7994 0.1931 0.0075 
 #&gt; </div><div class='input'>
 </div></pre>
   </div>

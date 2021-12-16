@@ -1,0 +1,11 @@
+.gitignore
+/docs
+/src/.vscode
+.vscode
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+/src-i386
+/src-x64
+^.*\.Rproj$
+^\.Rproj\.user$

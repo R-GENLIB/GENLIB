@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">GENLIB</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.9</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.1.5</span>
       </span>
     </div>
 
@@ -112,7 +112,7 @@
     <p>Creates data frame in pedigree format from an object of class GLgen</p>
     </div>
 
-    <pre class="usage"><span class='fu'>gen.genout</span><span class='op'>(</span> <span class='va'>gen</span>, sorted <span class='op'>=</span> <span class='st'>"F"</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>gen.genout</span><span class='op'>(</span> <span class='va'>gen</span>, sorted <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -123,8 +123,8 @@
     </tr>
     <tr>
       <th>sorted</th>
-      <td><p>If sorted="F" (default), individual id number are not sorted in output data. Id numbers for parents will be placed before their children ids.
-	If sorted="T", individual id numbers will be sorted.</p></td>
+      <td><p>If sorted=FALSE (default), individual id number are not sorted in output data. Id numbers for parents will be placed before their children ids.
+	If sorted=FALSE, individual id numbers will be sorted.</p></td>
     </tr>
     </table>
 
@@ -173,7 +173,7 @@
 #&gt; 
 #&gt;  Genealogical depth : 8
 #&gt; 
-#&gt;  Created on : Sat Jul 31 04:27:21 2021</div><div class='input'>
+#&gt;  Created on : Wed Dec 15 21:08:47 2021</div><div class='input'>
 <span class='co'># Genealogy as a data.frame</span>
 <span class='va'>genJi_df</span><span class='op'>&lt;-</span><span class='fu'>gen.genout</span><span class='op'>(</span><span class='va'>genJi</span><span class='op'>)</span>
 <span class='va'>genJi_df</span><span class='op'>[</span><span class='fl'>1</span><span class='op'>:</span><span class='fl'>12</span>,<span class='op'>]</span>
