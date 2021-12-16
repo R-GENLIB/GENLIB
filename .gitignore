@@ -1,4 +1,9 @@
-docs
 src/*.o
 .vscode
 src/.vscode
+/src-i386
+/src-x64
+.Rproj.user
+.Rhistory
+/GENLIB.Rproj
+

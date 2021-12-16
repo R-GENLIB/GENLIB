@@ -150,21 +150,10 @@ void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncet
 	outHaplo << lSimul << ";" << lNProposant << "\n";
 	outAllHaplo << lSimul << ";" << lNProposant << "\n";
 
-	std::mt19937 my_rng;
+	std::mt19937 my_rng = std::mt19937(seed);
 	std::uniform_real_distribution<> u_dist(0, 1);
 	std::poisson_distribution<int> p1_dist(probRecomb[0]);
 	std::poisson_distribution<int> p2_dist(probRecomb[1]);
-
-	if (seed==0){
-		std::random_device rdev;
-		uint32_t random_seed = rdev();
-		my_rng = std::mt19937(random_seed);
-		Rcpp::Rcout << "seed: " << random_seed << "\n";
-	}
-	else{
-		Rcpp::Rcout << "seed: " << seed;
-		my_rng = std::mt19937(seed);
-	}
 
 	try{
 
@@ -613,13 +602,13 @@ bool reconstruct(std::string WD, const std::string &simufilename,const std::stri
     std::ifstream in (simufilename.c_str());
     if(!in)
     {
-        Rcpp::Rcout << "Cannot open the proband_haplotypes file : " << simufilename << std::endl;
+        Rcpp::stop ("Cannot open the proband_haplotypes file ");
     }
 
 	WD += "/reconstructed_haplotypes.txt";
     std::ofstream reconstructed(WD.c_str());
     if(!reconstructed.is_open()){
-        Rcpp::Rcout<<"Can't open output file to write to. Check permissions: \n"<< WD << "\n";
+        Rcpp::stop("Can't open output file to write to. Check permissions of output directory");
     }
 
     std::vector<int> SNPpos = readSNPpos(SNPposfilename);
@@ -731,7 +720,7 @@ bool ancestralseq(const std::string &fileName, std::unordered_map<float, std::st
 
     if(!in)
     {
-        Rcpp::Rcout << "Cannot open the haplotype file : "<<fileName<<std::endl;
+        Rcpp::stop("Cannot open the hapfile");
         return false;
     }
 
@@ -753,7 +742,7 @@ std::vector<int> readSNPpos(const std::string &fileName){
     
     if(!in)
     {
-        Rcpp::Rcout << "Cannot open the map file : "<<fileName<<std::endl;
+        Rcpp::stop("Cannot open the mapfile");
     }
 
     std::vector<int> vec(std::istream_iterator<int>(in), {});

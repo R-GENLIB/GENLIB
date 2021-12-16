@@ -2,7 +2,9 @@
 \alias{gen.simuHaplo}
 \title{Gene dropping simulations - haplotypes}
 \description{Gene dropping from founders to specified probands. If sequence data is provided the function can translate results to sequences, otherwise will produce proband haplotypes with segments labelled w.r.t. the founder the segment came from}
-\usage{gen.simuHaplo(gen, pro, ancestors, simulNo = 1, RecombRate=c(0,0), Reconstruction =0, BP=0, Hapfile=NULL, Mapfile=NULL, seed= 0, outDir = getwd())}
+\usage{gen.simuHaplo(gen, pro, ancestors, simulNo = 1, RecombRate=c(0,0), 
+                    Reconstruction =0, BP=0, Hapfile=NULL, Mapfile=NULL, seed= 0, 
+                    outDir = getwd())}
 
 \arguments{
 \item{gen}{An object of class GLgen obtained with gen.genealogy, gen.lineages or gen.branching. Required.}
@@ -45,28 +47,44 @@ gen.graph(sample_gen)
 probands <- gen.pro(sample_gen)
 founders <- gen.founder(sample_gen)
 
-# Simulate the haplotypes of all probands, with segments labelled corresponding to the founder it is inherited from
-# we let "Reconstruction = 0"  as the default so no sequence data is required, and the generated haplotypes will be in terms of ancestral haplotypes with no sequence info
+# Simulate the gene dropping from founders to probamds
+# Generate haplotypes of probands, with segments labelled corresponding to the founder
+# If "Reconstruction = 0"  as the default so no sequence data is required, 
+#  and the generated haplotypes will be in terms relative position and founder ID
 
-gen.simuHaplo(sample_gen,pro = probands, ancestors= founders, simulNo=1, RecombRate=c(0.01,0.02), seed=0)
+gen.simuHaplo(sample_gen,pro = probands, ancestors= founders, simulNo=1, 
+                RecombRate=c(0.01,0.02), seed=0, outDir=tempdir())
 
-#The output files will be written to the working directory. If you do not wish to give access to this directory, 
+# The output files will be written to the working directory. 
+# If you do not wish to give access to this directory, 
 # then change the working directory with the command setwd() before running the function
 
-#We can also re-run the function with the Reconstruction = 1 option to obtain sequence data
+#We can also re-run the function with the Reconstruction = 1 option to use sequence data
+# this will generate a file of simulated proband haplotypes with sequence data
 # But we must provide the function with a Hapfile and Mapfile.
 
-#Hapfile contains the sequence data for each founder haplotype. Each line consists of only 2 elements, the founder haplotype ID #, and the sequence, seperated by a single whitespace
-# the sequence data can use any characters, but must be the same length between all founders, and each position in the sequence corresponds to a BP position in the haplotype so any missing data should be encoded using a missing data character and not skipped
+#Hapfile contains the sequence (SNP) data for each founder haplotype. 
+# Each line should consist of only 2 elements:
+# the founder haplotype ID #, and the sequence, seperated by a single whitespace
+# the sequence data must be a string and use any characters, 
+# but must be the same length between all founders.
+# Each position in the string corresponds to a BP position in the haplotype,
+# so any missing data should be encoded, using a missing data character and not skipped
+# Example hapfile:
 
 Hapfile<-system.file("extdata","sequences.txt",package="GENLIB")
 
-#Mapfile contains the base pair positions of all the characters of the sequences in the Hapfile. Each line describes the position of the corresponding character in the sequence
+#Mapfile contains the base pair positions of all the SNP's in the Hapfile. 
+#Each line describes the position of the corresponding character in the sequence
 # there should be no empty lines or whitespaces. 
+# Example mapfile:
 
-Mapfile<-system.file("extdata","sequences.txt",package="GENLIB")
+Mapfile<-system.file("extdata","SNP_positions.txt",package="GENLIB")
 
-gen.simuHaplo(sample_gen,pro = probands, ancestors= founders, simulNo=2, RecombRate=c(0.01,0.02), Reconstruction = 1, BP= 1000000, Hapfile= Hapfile, Mapfile = Mapfile, seed=777)
+gen.simuHaplo(sample_gen,pro = probands, ancestors= founders, simulNo=2, RecombRate=c(0.01,0.02), 
+                Reconstruction = 1, BP= 1000000, Hapfile= Hapfile, Mapfile = Mapfile, seed=777,
+                outDir=tempdir())
 
-#Since we used the Reconstruction=1 option, we will now get an additional output file with sequence data for the proband haplotypes.
+#Since we used the Reconstruction=1 option, we will now get an additional output file 
+# with sequence data for the proband haplotypes.
 }

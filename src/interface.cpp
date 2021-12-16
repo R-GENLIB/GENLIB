@@ -610,17 +610,13 @@ RcppExport SEXP SPLUSSimulHaplo(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, S
 	hapRef[0]=hapVide;
 
 	std::string WD = Rcpp::as<std::string>(sWD);
-	simulhaplo(Genealogie, proposant, *nproposant, ancetre, *nancetre, *nSimul, probRecomb, &hapRef, WD, *seed, NumRecomb, NumMeioses);
-	
-	Rcpp::Rcout << WD << "/Proband_Haplotypes.txt generated \n";
-	Rcpp::Rcout << WD << "/All_nodes_haplotypes.txt generated \n";
+	simulhaplo(Genealogie, proposant, *nproposant, ancetre, *nancetre, *nSimul, probRecomb, &hapRef, WD, *seed, NumRecomb, NumMeioses);	
 
 	if (*rec == 1){
 		std::string PathToHap = Rcpp::as<std::string>(sPathToHap);
 		std::string PathToMap = Rcpp::as<std::string>(sPathToMap);
 		std::string WD1 = WD;
 		reconstruct(WD,WD1+="/Proband_Haplotypes.txt",PathToHap, PathToMap, *BP);
-		Rcpp::Rcout << WD << "/reconstructed_haplotypes.txt generated \n";
 	}
 
 	return R_NilValue;

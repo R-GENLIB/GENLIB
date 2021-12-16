@@ -119,7 +119,7 @@ gen.simuHaplo = function (gen, pro, ancestors, simulNo = 1, RecombRate=c(0,0), R
 
 	if(Reconstruction == 1){
 		pathHap<-normalizePath(Hapfile, mustWork=TRUE)
-		pathMap<-paste(Mapfile, mustWork=TRUE)
+		pathMap<-normalizePath(Mapfile, mustWork=TRUE)
 	}
 	else {
 		pathHap=""
@@ -130,8 +130,15 @@ gen.simuHaplo = function (gen, pro, ancestors, simulNo = 1, RecombRate=c(0,0), R
 	numMeioses<-integer(simulNo)
 	numRecomb<-integer(simulNo)
 	simulCount<-c(1:simulNo)
+	if(seed==0)
+		seed=abs(.Random.seed[5])
+	message("seed: ", seed)
 	.Call("SPLUSSimulHaplo", gen@.Data, pro, length(pro), ancestors, length(ancestors), as.integer(simulNo), RecombRate, as.integer(Reconstruction), BP, outDir, pathHap, pathMap, as.integer(seed), numRecomb, numMeioses, package="GENLIB")
-	
+	if(Reconstruction==0){
+		message("output files: ", outDir, "/All_nodes_haplotypes.txt \n", outDir, "/Proband_Haplotypes.txt \n")
+	}else{
+		message("output files: ", outDir, "/All_nodes_haplotypes.txt \n", outDir, "/Proband_Haplotypes.txt \n", outDir, "/reconstructed_haplotypes.txt")
+	}
 	return(cbind(simulNo=simulCount,numRecomb=numRecomb,numMeioses=numMeioses))
 }
 
@@ -161,7 +168,7 @@ gen.simuSample = function(gen, pro, ancestors, stateAncestors, simulNo = 5000)#,
 	#double* pdRetour,long* PrintProgress)
 	#Call de la fonction en C
 	.Call("SPLUSSimulSingle", gen@.Data, pro, length(pro), ancestors, as.integer(stateAncestors), length(ancestors), 
-							  as.integer(simulNo), tmpsimul, FALSE, specialsok = T)
+							  as.integer(simulNo), tmpsimul, FALSE, specialsok = TRUE)
 	#Mise en matrice
 	dim(tmpsimul) <- c(length(pro), simulNo)
 	#if(named)
@@ -245,7 +252,7 @@ gen.simuSampleFreq = function(gen, pro, ancestors, stateAncestors, simulNo = 500
 	#double* pdRetour,long* PrintProgress)
 	#Call de la fonction en C
 	.Call("SPLUSSimulSingleFreq", gen@.Data, pro, length(pro), ancestors, as.integer(stateAncestors), length(ancestors), 
-								as.integer(simulNo), tmpsimul,	FALSE, specialsok = T)
+								as.integer(simulNo), tmpsimul,	FALSE, specialsok = TRUE)
 	#Mise en matrice
 	dim(tmpsimul) <- c(length(pro), 3)
 	#if(named)
