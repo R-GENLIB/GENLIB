@@ -38,8 +38,8 @@ Calcul et Analyse de diverse valeur d�riv� du gene fondateur
 #include <Rcpp/as.h>
 #include <Rcpp/Function.h>
 #include <unordered_map>
-//#include <boost/random/random_device.hpp>
 
+#include <boost/math/special_functions/gamma.hpp>
 
 #ifdef NEG
 	#undef NEG
@@ -77,22 +77,22 @@ static void FASTCALL ExploreCoeff(CIndSimul* Noeud);
 static void PathDestruction(CApPath **Path,int npath);
 
 
-std::string dump_hapref(std::unordered_map<int,haplotype*> *hapRef)
-{
-	std::stringstream out;
-	out << "hapRef\n";
-	for(auto h : (*hapRef)) {
-		out << "  " << h.first << "\n";
-		haplotype *hap = h.second;
-		out << "    &hap:         " << hap << std::endl;
-//		out << "    hap:          " << hap->hap << "\n";
-		out << "    pos:          " << hap->pos << "\n";
-		out << "    fixe:         " << hap->fixe << "\n";
-		out << "    next_segment: " << hap->next_segment << "\n";
-	}
+// std::string dump_hapref(std::unordered_map<int,haplotype*> *hapRef)
+// {
+// 	std::stringstream out;
+// 	out << "hapRef\n";
+// 	for(auto h : (*hapRef)) {
+// 		out << "  " << h.first << "\n";
+// 		haplotype *hap = h.second;
+// 		out << "    &hap:         " << hap << std::endl;
+// //		out << "    hap:          " << hap->hap << "\n";
+// 		out << "    pos:          " << hap->pos << "\n";
+// 		out << "    fixe:         " << hap->fixe << "\n";
+// 		out << "    next_segment: " << hap->next_segment << "\n";
+// 	}
 
-	return out.str();
-}
+// 	return out.str();
+// }
 
 
 // ********************************************************************
@@ -101,42 +101,203 @@ std::string dump_hapref(std::unordered_map<int,haplotype*> *hapRef)
 //
 // ********************************************************************
 /*! 
-	\brief Execute une simulation pour determiner les probabilites du passage d'un allele a une serie de proposant
-
-	Calcule les probabilite qu'un proposants recoivent 0,1-2,2 allele a partir d'un groupe d'ancetre
-	Calcule la probabilite conjointe que chaque proposant soit atteint
-	Calcule la probatilite que de un..n proposant soit atteint
-	Calcule la probabilie que chaque proposant soit atteint
-
-	\param Genealogie	[in] Une genealogie construite � l'aide de gen.genealogie 
-
-	\param plProposant	[in] Vecteur des no de proposant � �tudier
-	\param plProEtat    [in] vecteur de taille lNProposant et representant l'etat a considerer pour chaque proposant
-			<br>&nbsp; &nbsp;&nbsp; &nbsp;0: La condition est remplie si se proposant n'est pas malade 
-			<br>&nbsp; &nbsp;&nbsp; &nbsp;1: La condition est remplie si le proposant recois 1-2 allele 
-			<br>&nbsp; &nbsp;&nbsp; &nbsp;2: La condition est remplie si le proposant recois 2 allele 
-	\param lNProposant	[in] Nombre d'�l�ment du vecteur proposant
-  
-	\param plAncetre	[in] Vecteur des no des ancetres correspondant proposant � �tudier
-	\param plAncEtat	[in] Vecteur de taille plAncetre representant le nombre d'allele atteint pour chaque Ancetre (0,1,2) 
-	\param lNAncetre	[in] Nombre d'�l�ment du vecteur ancetre
-
-	\param lSimul		[in] Nombre de simulation a effectuer
-
-	\retval pdRetConj	[out] Un pointeur vers un double. 
-					En cas de succes, le double represente la probabilite conjointe que la condition de chaque proposant soit remplis. 
-	\retval pdRetSimul	[out] Un pointeur vers une vecteur de taille lNProposant.. 
-					En cas de succes, Probabilite que la condition de chaque proposant soit remplis
-	\retval pdRetProp	[out] Un pointeur vers une vecteur de taille lNProposant+1.
-					En cas de succes represente la probabilite que 0,1,2..n condition soit remplis
-									
-	\param printprogress [in] imprime un message indiquant les progress accomplies
-
-	\return 0 si la fonction est execut� avec succ�s 
 */ 
+
+class Crossovers
+{
+	public:
+  		Crossovers();
+		
+		void Poisson_CO(int&, double*, double*, int&, std::mt19937&, double*);
+		void Poisson_ZT(int&, double*, double*, int&, std::mt19937&, double*);
+		void init_gamma();
+		void Gamma_CO  (int&, double*, double*, int&, std::mt19937&, double*);
+
+		
+ 	private:
+		double first_arrival[2][10000]; //Numbins = 10,000. Need to calculate first arrival times for gamma process. They are distributed differently than the interrarival times
+
+}
+
+void Crossovers::Poisson_CO(int &sex, double *param, double *Morgan_len, int& NumRecomb, std::mt19937& mtgen, double *CO_array){
+	double pos;			
+	static std::uniform_real_distribution<> u_dist(0, 1);
+	static std::poisson_distribution<int> p1_dist(param[0]);
+	static std::poisson_distribution<int> p2_dist(param[1]);
+
+	if(sex==1){
+		int NumRecomb = p1_dist(mtgen); //number of recombination events 
+		
+		for( int h=0; h<NumRecomb; h++ ) {
+			pos = u_dist(mtgen);
+			CO_array[h] = pos; 
+		}
+		
+		std::sort(CO_array, CO_array + NumRecomb)	
+	}
+	else{
+		int NumRecomb = p2_dist(mtgen); //number of recombination events 
+
+		for( int h=0; h<NumRecomb; h++ ) {
+			pos = u_dist(mtgen);
+			CO_array[h] = pos; 
+		}
+		
+		std::sort(CO_array, CO_array + NumRecomb)			
+	}
+
+}
+
+void Crossovers::Poisson_ZT(int &sex, double *param, double *Morgan_len, int& NumRecomb, std::mt19937& mtgen, double *CO_array){
+	double pos;			
+	static std::uniform_real_distribution<> u_dist(0, 1);
+	static std::poisson_distribution<int> p1_dist(param[0]);
+	static std::poisson_distribution<int> p2_dist(param[1]);
+
+	if(sex==1){
+		int NumRecomb = p1_dist(mtgen); //number of recombination events 
+
+		while (NumRecomb = 0){
+			NumRecomb = p1_dist(mtgen);
+		}
+		
+		for( int h=0; h<NumRecomb; h++ ) {
+			pos = u_dist(mtgen);
+			CO_array[h] = pos; 
+		}
+		
+		std::sort(CO_array, CO_array + NumRecomb)	
+	}
+	else{
+		int NumRecomb = p2_dist(mtgen); //number of recombination events 
+
+		while (NumRecomb == 0){
+			NumRecomb = p2_dist(mtgen);
+		}
+		
+		for( int h=0; h<NumRecomb; h++ ) {
+			pos = u_dist(mtgen);
+			CO_array[h] = pos; 
+		}
+		
+		std::sort(CO_array, CO_array + NumRecomb)			
+	}
+
+}
+
+
+void Crossovers::Gamma_CO(int &sex, double *param, double *Morgan_len, int& NumRecomb, std::mt19937& mtgen, double *CO_array){
+	double u_rand;
+	double step;
+	double interrarival;
+	double current_pos;
+	double chiasma_pos[20];
+	int Num_Chiasmata;
+
+	static std::uniform_real_distribution<> u_dist(0, 1);
+	static std::gamma_distribution<> g1_dist(param[0],1/(2*param[0]));
+	static std::gamma_distribution<> g2_dist(param[1],1/(2*param[1]));
+
+	if (sex==1){
+		step = Morgan_len[0]/10000
+	}
+	else{
+		step=Morgan_len[1]/10000
+	}
+
+	if ( u > first_arrival[sex-1][9999]) NumRecomb = 0; //IF the first chiasmata is beyond the length of the chromsome then we have no recombination
+	else {
+		if (u_rand <= first_arrival[sex-1][0]){ 
+			chiasma_pos[0] = 0.5 * step;
+			Num_Chiasmata = 1;
+		}
+		else {
+			int low = 0, high = 10000;
+			while (high - low > 1) {
+				int mid = (high - low) / 2 + low;
+				if (u <= startProb[sex-1][mid])
+					high = mid;
+				else if (u > startProb[sex-1][mid])
+					low = mid;
+			}
+			Num_Chiasmata=1;
+			//mid will end up being the index of the smallest value (step of reimann) we are less than or equal to
+			chiasma_pos[0] = mid*step + 0.5*step;
+		}
+
+		current_pos = chiasma_pos[0];
+		//After finding the first arrival time we can  use std::gamma_distribution for the rest
+		if (sex==1){
+			interrarival = g1_dist(mtgen);
+			int counter = 1;
+			while (current_pos + interrarival < Morgan_len[0]){
+				Num_Chiasmata = Num_Chiasmata + 1;
+				chiasma_pos[counter] = current_pos + interrarival;
+				current_pos = current_pos + interrarival;
+				counter = counter + 1;
+				interrarival = g1_dist(mtgen);
+			}
+		}
+		else{
+			interrarival = g2_dist(mtgen);
+			int counter = 1;
+			while (current_pos + interrarival < Morgan_len[1]){
+				Num_Chiasmata = Num_Chiasmata + 1;
+				chiasma_pos[counter] = current_pos + interrarival;
+				current_pos = current_pos + interarival;
+				counter = counter + 1;
+				interrarival = g2_dist(mtgen);
+			}
+		}
+
+		//After determining position of all chiasmata, we select each one with probability 0.5 of resolving as a crossover 
+		counter=0;
+		NumRecomb = 0;
+		for (int i=0; i<Num_Chiasmata; i++){
+			u_rand = u_dist(mtgen);
+			if (u_dist < 0.50){
+				CO_array[counter] = chiasma_pos[i];
+				counter += 1;
+				NumRecomb += 1;
+			}
+		}
+	}
+}
+
+
+//F is for father, M is mother (paramF/M, Morgan_LenF/M) (kind of confusing maybe I should change...)
+//first arrival time for the gamma process is distributed differently than the rest of the arrival times.
+//It is a delayed renewal process, with the distribution of the first arrival time given by the limiting distribution of arrival time (which gives stationary property to the process)
+//Distribution of the first arrival time is (1/mu)*(1-F(x)) where F(x) is CDF.
+//In our case mu=1/2 always, (since we set rate = 2*shape), and we use boost::math::gamma_q for (1-F(x))
+void Crossovers::init_gamma(const double &paramF, const double &paramM, const double &Morgan_LenF, const double &Morgan_LenM){
+	double x;
+	//Number of bins is 10,000
+	x= Morgan_LenF/10000;
+	first_arrival[0][0] = 2 * boost::math::gamma_q(paramF, 2*paramF*x) * 1/10000;
+
+	for ( int i=1; i<10000; i++){
+		x = Morgan_LenF*(i+1)/10000;
+		first_arrival[0][i] = 2 *  boost::math::gamma_q(/*shape=*/ paramF, 2*paramF*x) + first_arrival[0][i-1];
+	}	
+
+	if(!(paramF==paramM && Morgan_LenF==Morgan_LenM)){
+		first_arrival[1][0] = 2 * boost::math::gamma_q(paramM, 2*paramM*x) * 1/10000;
+		for ( int i=1; i<10000; i++){
+			x = Morgan_LenM*(i+1)/10000;
+			first_arrival[1][i] = 2 *  boost::math::gamma_q(/*shape=*/ paramM, 2*paramM*x) + first_arrival[1][i-1];
+		}		
+	}
+	else{
+		for ( int i=0; i<10000; i++){
+			first_arrival[1][i] = first_arrival[0][i];
+		}
+	}
+}
+
 void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncetre, int lNAncetre,
-						int lSimul, double* probRecomb, std::unordered_map<int,haplotype*> *hapRef, std::string WD, int seed,
-						int* NumRecomb, int* NumMeioses)
+						int lSimul, double* probRecomb, double* Morgan_Len, std::unordered_map<int,haplotype*> *hapRef, std::string WD, 
+						int seed, int* total_COs)
 {
 	double precision = 1000000000.0;
 	std::string stroutHaplo; 
@@ -150,10 +311,6 @@ void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncet
 	outHaplo << lSimul << ";" << lNProposant << "\n";
 	outAllHaplo << lSimul << ";" << lNProposant << "\n";
 
-	std::mt19937 my_rng = std::mt19937(seed);
-	std::uniform_real_distribution<> u_dist(0, 1);
-	std::poisson_distribution<int> p1_dist(probRecomb[0]);
-	std::poisson_distribution<int> p2_dist(probRecomb[1]);
 
 	try{
 
@@ -235,36 +392,45 @@ void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncet
 	for(i=0;i<lNAncetre;i++)		
 		StartSortPrioriteArbre(NoeudAnc[i],Ordre,&NOrdre,OrdreSaut); // les infos de NoeudAnc sont pointes par Ordre dans "le bon ordre".
 
+	std::mt19937 my_rng = std::mt19937(seed);
+	Crossovers crossovers();
+  
+	void (Crossovers::*SampleCO)(int, const double&, const double&, int&, std::mt19937&, double*);
+	
+	if (model==1) SampleCo=&Crossover::Poisson_CO;
+	else if (model==2) SampleCo=&Crossover::Poisson_ZT;
+	else if (model==3){
+		SampleCO=&Crossover::Gamma_CO;
+		init_gamma(param[0], param[1], Morgan_Len[0], Morgan_Len[1]);
+	}
+
 	//Simulation
+	double pHap;
+
+	double CO_arrayF[20]; //hold crossover positions for Father's chromosome
+	double CO_arrayM[20]; //hold crossover positions for Mother's chromsome
+
+	int nbRecomb1;
+	int nbRecomb2;	
 	for(int csimul=0;csimul<lSimul; csimul++)
 	{
 		int clesSim= cleFixe;
-
+		
 		for(int i=0;i<NOrdre;i++) {
-
-			int nbRecomb1 = p1_dist(my_rng); //number of recombination events of father's chromosomes
-			int nbRecomb2 = p2_dist(my_rng); //number of recombination events of mother's chromosomes
-			
-			NumRecomb[csimul] += nbRecomb1 + nbRecomb2;
-			NumMeioses[csimul] += 2;
-
-			double pHap;
+			(crossovers.*SampleCO)(1, probRecomb, Morgan_Len, nbRecomb1, my_rng, Co_arrayF[0]);
+			(crossovers.*SampleCO)(2, probRecomb, Morgan_Len, nbRecomb2, my_rng, Co_arrayM[0]);
 
 			outAllHaplo <<"{"<< csimul+1 <<";"<< Ordre[i]->nom <<";" ;
 			
 			if(Ordre[i]->pere != NULL){
 				outAllHaplo << nbRecomb1 <<",";
 				if(nbRecomb1 > 0){ //Recombination event in the father
-					double tailleTot[20];
 					pHap = u_dist(my_rng);
 					outAllHaplo << pHap;
-
-					for(int j=0;j<nbRecomb1;j++){
-						tailleTot[j] = u_dist(my_rng);
-						outAllHaplo << std::fixed << "," << double(round(tailleTot[j]*precision)/precision);
+					for(int j=0; j<nbRecomb1; j++){
+						outAllHaplo << std::fixed << "," << double(round(Co_arrayF[j]*precision)/precision);
 					}
-					std::sort(tailleTot,tailleTot + nbRecomb1);
-					makeRecombF(Ordre[i], hapRef, pHap, nbRecomb1, tailleTot, clesSim);
+					makeRecombF(Ordre[i], hapRef, pHap, nbRecomb1, CO_arrayF, clesSim);
 					outAllHaplo << ";";
 				}			
 				else{ //If no recombination just pass one of father's chromosomes down 
@@ -279,23 +445,21 @@ void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncet
 				}
 			}
 			else{
-				outAllHaplo << "0,0,0;" ;
+				outAllHaplo << "0,0,0}";
 				Ordre[i]->clesHaplo_1 = 0;
-			}
+			}	
 
 			if(Ordre[i]->mere != NULL){
 				outAllHaplo << nbRecomb2 << ",";
 				if(nbRecomb2 > 0){ //Recombination event in mother
-					double tailleTot[20];
 					pHap = u_dist(my_rng);
 					outAllHaplo << pHap;
 
 					for(int j=0;j<nbRecomb2;j++){
-						tailleTot[j] = u_dist(my_rng);
-						outAllHaplo << std::fixed << "," <<  double(round(tailleTot[j]*precision)/precision);
+						outAllHaplo << std::fixed << "," <<  double(round(CO_arrayM[j]*precision)/precision);
 					}
-					std::sort(tailleTot,tailleTot + nbRecomb2);
-					makeRecombM(Ordre[i], hapRef, pHap, nbRecomb2, tailleTot, clesSim);
+
+					makeRecombM(Ordre[i], hapRef, pHap, nbRecomb2, CO_arrayM, clesSim);
 					outAllHaplo << "}";
 				}	
 				else{
@@ -314,18 +478,17 @@ void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncet
 				Ordre[i]->clesHaplo_2 = 0;
 			}			
 
-			std::stringstream hap;
-
 			haplotype* tmp = (*hapRef).find(Ordre[i]->clesHaplo_1)->second;
 			double pos = tmp->pos;
 			if(pos == -1.0) pos = 1;
+
 			for( int h=0; h<2; h++ ) {
-				hap <<std::fixed<< "{" << 0 << ";" << tmp->hap << ";" << double(round(pos*precision)/precision) ; // on normalise a 1 en divisant par taille_tot (*plus necessaire)
+				outAllHaplo <<std::fixed<< "{" << 0 << ";" << tmp->hap << ";" << double(round(pos*precision)/precision) ; // on normalise a 1 en divisant par taille_tot (*plus necessaire)
 				while( tmp->next_segment != NULL) { 
 					tmp = tmp->next_segment;
 					pos = tmp->pos;
 					if(pos == -1.0) pos = 1;
-					hap <<std::fixed<< ";" << tmp->hap << ";" <<  double(round(pos*precision)/precision) ;// on normalise a 1 en divisant par taille_tot (*plus necessaire)
+					outAllHaplo <<std::fixed<< ";" << tmp->hap << ";" <<  double(round(pos*precision)/precision) ;// on normalise a 1 en divisant par taille_tot (*plus necessaire)
 				}
 				
 				hap << "}";
@@ -333,7 +496,7 @@ void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncet
 				pos = tmp->pos;
 				if(pos == -1.0) pos = 1;
 			}	
-			outAllHaplo << hap.str() << std::endl;
+			outAllHaplo << std::endl;
 
 		}
 		
@@ -498,6 +661,7 @@ void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncet
   
 // }
 
+
 void makeRecombF( CIndSimul *Ordre_tmp, std::unordered_map<int, haplotype*> *hapRef, double probHap, int nbRecomb, double *posRecomb, int &cle )
 {
 
@@ -533,12 +697,13 @@ void makeRecombM( CIndSimul *Ordre_tmp, std::unordered_map<int, haplotype*> *hap
 		merehap2=(*hapRef).find(Ordre_tmp->mere->clesHaplo_1)->second;
 	}
 
-    haplotype *hapChild_2 = new haplotype();
+    haplotype *hapChild_2 = new haplotyp  e();
     haplotype *hapChild_deb2 = hapChild_2;
     recombine(merehap1, merehap2, hapChild_deb2, nbRecomb, posRecomb);
     Ordre_tmp->clesHaplo_2 = cle;
     (*hapRef)[cle++] = hapChild_2;
 }
+
 
 void recombine(haplotype* hapBegin, haplotype* hapEnd, haplotype* hapChild, int nbRecomb, double* posRecomb )
 {
@@ -751,7 +916,40 @@ std::vector<int> readSNPpos(const std::string &fileName){
     return vec;
 }
 
+/*! 
+	\brief Execute une simulation pour determiner les probabilites du passage d'un allele a une serie de proposant
 
+	Calcule les probabilite qu'un proposants recoivent 0,1-2,2 allele a partir d'un groupe d'ancetre
+	Calcule la probabilite conjointe que chaque proposant soit atteint
+	Calcule la probatilite que de un..n proposant soit atteint
+	Calcule la probabilie que chaque proposant soit atteint
+
+	\param Genealogie	[in] Une genealogie construite � l'aide de gen.genealogie 
+
+	\param plProposant	[in] Vecteur des no de proposant � �tudier
+	\param plProEtat    [in] vecteur de taille lNProposant et representant l'etat a considerer pour chaque proposant
+			<br>&nbsp; &nbsp;&nbsp; &nbsp;0: La condition est remplie si se proposant n'est pas malade 
+			<br>&nbsp; &nbsp;&nbsp; &nbsp;1: La condition est remplie si le proposant recois 1-2 allele 
+			<br>&nbsp; &nbsp;&nbsp; &nbsp;2: La condition est remplie si le proposant recois 2 allele 
+	\param lNProposant	[in] Nombre d'�l�ment du vecteur proposant
+  
+	\param plAncetre	[in] Vecteur des no des ancetres correspondant proposant � �tudier
+	\param plAncEtat	[in] Vecteur de taille plAncetre representant le nombre d'allele atteint pour chaque Ancetre (0,1,2) 
+	\param lNAncetre	[in] Nombre d'�l�ment du vecteur ancetre
+
+	\param lSimul		[in] Nombre de simulation a effectuer
+
+	\retval pdRetConj	[out] Un pointeur vers un double. 
+					En cas de succes, le double represente la probabilite conjointe que la condition de chaque proposant soit remplis. 
+	\retval pdRetSimul	[out] Un pointeur vers une vecteur de taille lNProposant.. 
+					En cas de succes, Probabilite que la condition de chaque proposant soit remplis
+	\retval pdRetProp	[out] Un pointeur vers une vecteur de taille lNProposant+1.
+					En cas de succes represente la probabilite que 0,1,2..n condition soit remplis
+									
+	\param printprogress [in] imprime un message indiquant les progress accomplies
+
+	\return 0 si la fonction est execut� avec succ�s 
+*/ 
 int simul(int* Genealogie, int* plProposant, int* plProEtat,int lNProposant, int* plAncetre, int* plAncEtat, int lNAncetre,
 		int lSimul, double* pdRetConj, double* pdRetSimul, double* pdRetProp, double* probRecomb, double probSurvieHomo,
 		int printprogress)
