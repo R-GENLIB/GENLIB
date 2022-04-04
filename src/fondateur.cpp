@@ -39,7 +39,6 @@ Calcul et Analyse de diverse valeur d�riv� du gene fondateur
 #include <Rcpp/Function.h>
 #include <unordered_map>
 
-// [[Rcpp::depends(BH)]]
 #include <boost/math/special_functions/gamma.hpp>
 
 #ifdef NEG
@@ -299,7 +298,7 @@ void Crossovers::Gamma_CO(const int &sex, double *param, double *Morgan_len, int
 
 void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncetre, int lNAncetre,
 						int lSimul, double* probRecomb, double* Morgan_Len, int model, std::unordered_map<int,haplotype*> *hapRef, std::string WD, 
-						int seed, int* total_COs) 
+						int seed) 
 {
 	double precision = 1000000000.0;
 	std::string stroutHaplo; 

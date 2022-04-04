@@ -614,7 +614,7 @@ RcppExport SEXP SPLUSSimulHaplo(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, S
 	hapRef[0]=hapVide;
 
 	std::string WD = Rcpp::as<std::string>(sWD);
-	simulhaplo(Genealogie, proposant, *nproposant, ancetre, *nancetre, *nSimul, probRecomb, Morgan_Len, *model, &hapRef, WD, *seed, NumRecomb, NumMeioses);	
+	simulhaplo(Genealogie, proposant, *nproposant, ancetre, *nancetre, *nSimul, probRecomb, Morgan_Len, *model, &hapRef, WD, *seed);	
 
 	if (*rec == 1){
 		std::string PathToHap = Rcpp::as<std::string>(sPathToHap);

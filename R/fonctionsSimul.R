@@ -136,7 +136,7 @@ gen.simuHaplo = function (gen, pro, ancestors, simulNo = 1, model =1, RecombRate
 	.Call("SPLUSSimulHaplo", gen@.Data, pro, length(pro), ancestors, length(ancestors), as.integer(simulNo), RecombRate, MorganLen, model, as.integer(Reconstruction), BP, outDir, pathHap, pathMap, as.integer(seed), numRecomb, numMeioses, package="GENLIB")
 	if(Reconstruction==0){
 		message("\n output files: ", outDir, "/All_nodes_haplotypes.txt \n", outDir, "/Proband_Haplotypes.txt \n")
-	}else{
+	}else{ 
 		message("output files: ", outDir, "/All_nodes_haplotypes.txt \n", outDir, "/Proband_Haplotypes.txt \n", outDir, "/reconstructed_haplotypes.txt")
 	}
 	return(cbind(simulNo=simulCount,numRecomb=numRecomb,numMeioses=numMeioses))
