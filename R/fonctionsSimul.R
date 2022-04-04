@@ -98,7 +98,7 @@ gen.simuProb = function(gen, pro, statePro, ancestors, stateAncestors, simulNo=5
 }
 #print.it = F, 
 
-gen.simuHaplo = function (gen, pro, ancestors, simulNo = 1, RecombRate=c(0,0), Reconstruction =0, BP=0, Hapfile=NULL, Mapfile=NULL, seed= 0, outDir = getwd()){
+gen.simuHaplo = function (gen, pro, ancestors, simulNo = 1, model =1, RecombRate=c(1,1), MorganLen=c(3,3), Reconstruction =0, BP=0, Hapfile=NULL, Mapfile=NULL, seed= 0, outDir = getwd()){
 	if(!is(gen, "GLgen"))
 		stop("Invalid parameter: gen must be an instance of Glgen (see gen.genealogy)")
 	if(!is(pro, "numeric") )
@@ -133,9 +133,9 @@ gen.simuHaplo = function (gen, pro, ancestors, simulNo = 1, RecombRate=c(0,0), R
 	if(seed==0)
 		seed=abs(.Random.seed[5])
 	message("seed: ", seed)
-	.Call("SPLUSSimulHaplo", gen@.Data, pro, length(pro), ancestors, length(ancestors), as.integer(simulNo), RecombRate, as.integer(Reconstruction), BP, outDir, pathHap, pathMap, as.integer(seed), numRecomb, numMeioses, package="GENLIB")
+	.Call("SPLUSSimulHaplo", gen@.Data, pro, length(pro), ancestors, length(ancestors), as.integer(simulNo), RecombRate, MorganLen, model, as.integer(Reconstruction), BP, outDir, pathHap, pathMap, as.integer(seed), numRecomb, numMeioses, package="GENLIB")
 	if(Reconstruction==0){
-		message("output files: ", outDir, "/All_nodes_haplotypes.txt \n", outDir, "/Proband_Haplotypes.txt \n")
+		message("\n output files: ", outDir, "/All_nodes_haplotypes.txt \n", outDir, "/Proband_Haplotypes.txt \n")
 	}else{
 		message("output files: ", outDir, "/All_nodes_haplotypes.txt \n", outDir, "/Proband_Haplotypes.txt \n", outDir, "/reconstructed_haplotypes.txt")
 	}

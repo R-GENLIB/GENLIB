@@ -39,6 +39,7 @@ Calcul et Analyse de diverse valeur d�riv� du gene fondateur
 #include <Rcpp/Function.h>
 #include <unordered_map>
 
+// [[Rcpp::depends(BH)]]
 #include <boost/math/special_functions/gamma.hpp>
 
 #ifdef NEG
@@ -105,21 +106,19 @@ static void PathDestruction(CApPath **Path,int npath);
 
 class Crossovers
 {
-	public:
-  		Crossovers();
-		
-		void Poisson_CO(int&, double*, double*, int&, std::mt19937&, double*);
-		void Poisson_ZT(int&, double*, double*, int&, std::mt19937&, double*);
-		void init_gamma();
-		void Gamma_CO  (int&, double*, double*, int&, std::mt19937&, double*);
+	public:		
+		void Poisson_CO(const int&, double*, double*, int&, std::mt19937&, double*);
+		void Poisson_ZT(const int&, double*, double*, int&, std::mt19937&, double*);
+		void init_gamma(double&, double&, double&, double& );
+		void Gamma_CO  (const int&, double*, double*, int&, std::mt19937&, double*);
 
 		
  	private:
 		double first_arrival[2][10000]; //Numbins = 10,000. Need to calculate first arrival times for gamma process. They are distributed differently than the interrarival times
 
-}
+};
 
-void Crossovers::Poisson_CO(int &sex, double *param, double *Morgan_len, int& NumRecomb, std::mt19937& mtgen, double *CO_array){
+void Crossovers::Poisson_CO(const int &sex, double *param, double *Morgan_len, int& NumRecomb, std::mt19937& mtgen, double *CO_array){
 	double pos;			
 	static std::uniform_real_distribution<> u_dist(0, 1);
 	static std::poisson_distribution<int> p1_dist(param[0]);
@@ -133,7 +132,7 @@ void Crossovers::Poisson_CO(int &sex, double *param, double *Morgan_len, int& Nu
 			CO_array[h] = pos; 
 		}
 		
-		std::sort(CO_array, CO_array + NumRecomb)	
+		std::sort(CO_array, CO_array + NumRecomb);
 	}
 	else{
 		int NumRecomb = p2_dist(mtgen); //number of recombination events 
@@ -143,12 +142,12 @@ void Crossovers::Poisson_CO(int &sex, double *param, double *Morgan_len, int& Nu
 			CO_array[h] = pos; 
 		}
 		
-		std::sort(CO_array, CO_array + NumRecomb)			
+		std::sort(CO_array, CO_array + NumRecomb);		
 	}
 
 }
 
-void Crossovers::Poisson_ZT(int &sex, double *param, double *Morgan_len, int& NumRecomb, std::mt19937& mtgen, double *CO_array){
+void Crossovers::Poisson_ZT(const int &sex, double *param, double *Morgan_len, int& NumRecomb, std::mt19937& mtgen, double *CO_array){
 	double pos;			
 	static std::uniform_real_distribution<> u_dist(0, 1);
 	static std::poisson_distribution<int> p1_dist(param[0]);
@@ -157,7 +156,7 @@ void Crossovers::Poisson_ZT(int &sex, double *param, double *Morgan_len, int& Nu
 	if(sex==1){
 		int NumRecomb = p1_dist(mtgen); //number of recombination events 
 
-		while (NumRecomb = 0){
+		while (NumRecomb == 0){
 			NumRecomb = p1_dist(mtgen);
 		}
 		
@@ -166,7 +165,7 @@ void Crossovers::Poisson_ZT(int &sex, double *param, double *Morgan_len, int& Nu
 			CO_array[h] = pos; 
 		}
 		
-		std::sort(CO_array, CO_array + NumRecomb)	
+		std::sort(CO_array, CO_array + NumRecomb);
 	}
 	else{
 		int NumRecomb = p2_dist(mtgen); //number of recombination events 
@@ -180,97 +179,12 @@ void Crossovers::Poisson_ZT(int &sex, double *param, double *Morgan_len, int& Nu
 			CO_array[h] = pos; 
 		}
 		
-		std::sort(CO_array, CO_array + NumRecomb)			
+		std::sort(CO_array, CO_array + NumRecomb);		
 	}
 
 }
 
-
-void Crossovers::Gamma_CO(int &sex, double *param, double *Morgan_len, int& NumRecomb, std::mt19937& mtgen, double *CO_array){
-	double u_rand;
-	double step;
-	double interrarival;
-	double current_pos;
-	double chiasma_pos[20];
-	int Num_Chiasmata;
-
-	static std::uniform_real_distribution<> u_dist(0, 1);
-	static std::gamma_distribution<> g1_dist(param[0],1/(2*param[0]));
-	static std::gamma_distribution<> g2_dist(param[1],1/(2*param[1]));
-
-	if (sex==1){
-		step = Morgan_len[0]/10000
-	}
-	else{
-		step=Morgan_len[1]/10000
-	}
-
-	if ( u > first_arrival[sex-1][9999]) NumRecomb = 0; //IF the first chiasmata is beyond the length of the chromsome then we have no recombination
-	else {
-		if (u_rand <= first_arrival[sex-1][0]){ 
-			chiasma_pos[0] = 0.5 * step;
-			Num_Chiasmata = 1;
-		}
-		else {
-			int low = 0, high = 10000;
-			while (high - low > 1) {
-				int mid = (high - low) / 2 + low;
-				if (u <= startProb[sex-1][mid])
-					high = mid;
-				else if (u > startProb[sex-1][mid])
-					low = mid;
-			}
-			Num_Chiasmata=1;
-			//mid will end up being the index of the smallest value (step of reimann) we are less than or equal to
-			chiasma_pos[0] = mid*step + 0.5*step;
-		}
-
-		current_pos = chiasma_pos[0];
-		//After finding the first arrival time we can  use std::gamma_distribution for the rest
-		if (sex==1){
-			interrarival = g1_dist(mtgen);
-			int counter = 1;
-			while (current_pos + interrarival < Morgan_len[0]){
-				Num_Chiasmata = Num_Chiasmata + 1;
-				chiasma_pos[counter] = current_pos + interrarival;
-				current_pos = current_pos + interrarival;
-				counter = counter + 1;
-				interrarival = g1_dist(mtgen);
-			}
-		}
-		else{
-			interrarival = g2_dist(mtgen);
-			int counter = 1;
-			while (current_pos + interrarival < Morgan_len[1]){
-				Num_Chiasmata = Num_Chiasmata + 1;
-				chiasma_pos[counter] = current_pos + interrarival;
-				current_pos = current_pos + interarival;
-				counter = counter + 1;
-				interrarival = g2_dist(mtgen);
-			}
-		}
-
-		//After determining position of all chiasmata, we select each one with probability 0.5 of resolving as a crossover 
-		counter=0;
-		NumRecomb = 0;
-		for (int i=0; i<Num_Chiasmata; i++){
-			u_rand = u_dist(mtgen);
-			if (u_dist < 0.50){
-				CO_array[counter] = chiasma_pos[i];
-				counter += 1;
-				NumRecomb += 1;
-			}
-		}
-	}
-}
-
-
-//F is for father, M is mother (paramF/M, Morgan_LenF/M) (kind of confusing maybe I should change...)
-//first arrival time for the gamma process is distributed differently than the rest of the arrival times.
-//It is a delayed renewal process, with the distribution of the first arrival time given by the limiting distribution of arrival time (which gives stationary property to the process)
-//Distribution of the first arrival time is (1/mu)*(1-F(x)) where F(x) is CDF.
-//In our case mu=1/2 always, (since we set rate = 2*shape), and we use boost::math::gamma_q for (1-F(x))
-void Crossovers::init_gamma(const double &paramF, const double &paramM, const double &Morgan_LenF, const double &Morgan_LenM){
+void Crossovers::init_gamma(double& paramF,  double& paramM,  double& Morgan_LenF,  double& Morgan_LenM){
 	double x;
 	//Number of bins is 10,000
 	x= Morgan_LenF/10000;
@@ -295,18 +209,105 @@ void Crossovers::init_gamma(const double &paramF, const double &paramM, const do
 	}
 }
 
+void Crossovers::Gamma_CO(const int &sex, double *param, double *Morgan_len, int& NumRecomb, std::mt19937& mtgen, double *CO_array){
+	double u_rand;
+	double length;
+	double step;
+	double interrarival;
+	double current_pos;
+	double chiasma_pos[20];
+	int Num_Chiasmata = 0;
+
+	static std::uniform_real_distribution<> u_dist(0, 1);
+	static std::gamma_distribution<> g1_dist(param[0],1/(2*param[0]));
+	static std::gamma_distribution<> g2_dist(param[1],1/(2*param[1]));
+
+	if (sex==1){
+		length = Morgan_len[0];
+	} else{
+		length = Morgan_len[1];
+	}
+
+	step = length/10000;
+    u_rand = u_dist(mtgen); 
+
+	if ( u_rand > first_arrival[sex-1][9999]) NumRecomb = 0; //IF the first chiasmata is beyond the length of the chromsome then we have no recombination
+	else {
+		if (u_rand <= first_arrival[sex-1][0]){ 
+			chiasma_pos[0] = 0.5 * step;
+			Num_Chiasmata = 1;
+		}
+		else { //binary search to find the first position (sample between 0-1, then lookup the inverse CDF values)
+			int mid, low = 0, high = 10000;
+			while (high - low > 1) {
+				mid = (high - low) / 2 + low;
+				if (u_rand <= first_arrival[sex-1][mid])
+					high = mid;
+				else if (u_rand > first_arrival[sex-1][mid])
+					low = mid;
+			}
+			Num_Chiasmata=1;
+			//mid will end up being the index of the smallest value (step of reimann partial sums) we are less than or equal to
+			chiasma_pos[0] = mid*step + 0.5*step;
+		}
+		Rcpp::Rcout << Num_Chiasmata << std::endl;
+
+		current_pos = chiasma_pos[0];
+		//After finding the first arrival time we can  use std::gamma_distribution for the rest
+		if (sex==1){
+			interrarival = g1_dist(mtgen);
+			int counter = 1;
+			while (current_pos + interrarival < Morgan_len[0]){
+				Num_Chiasmata = Num_Chiasmata + 1;
+
+				chiasma_pos[counter] = current_pos + interrarival;
+				current_pos 		 = current_pos + interrarival;
+
+				counter 	 = counter + 1;
+				interrarival = g1_dist(mtgen);
+			}
+			Rcpp::Rcout << Num_Chiasmata << std::endl;
+
+		}
+		else{
+			interrarival = g2_dist(mtgen);
+			int counter = 1;
+			while (current_pos + interrarival < Morgan_len[1]){
+				Num_Chiasmata = Num_Chiasmata + 1;
+
+				chiasma_pos[counter] = current_pos + interrarival;
+				current_pos 		 = current_pos + interrarival;
+
+				counter 	 = counter + 1;
+				interrarival = g2_dist(mtgen);
+			}
+		}
+
+		//After determining position of all chiasmata, we select each one with probability 0.5 of resolving as a crossover 
+		int counter=0;
+		NumRecomb = 0;
+		for (int i=0; i<Num_Chiasmata; i++){
+			u_rand = u_dist(mtgen);
+			if (u_rand < 0.50){
+				CO_array[counter] = chiasma_pos[i]/length;
+				counter   += 1;
+				NumRecomb += 1;
+			}
+		}
+	}
+}
+
 void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncetre, int lNAncetre,
-						int lSimul, double* probRecomb, double* Morgan_Len, std::unordered_map<int,haplotype*> *hapRef, std::string WD, 
-						int seed, int* total_COs)
+						int lSimul, double* probRecomb, double* Morgan_Len, int model, std::unordered_map<int,haplotype*> *hapRef, std::string WD, 
+						int seed, int* total_COs) 
 {
 	double precision = 1000000000.0;
 	std::string stroutHaplo; 
 	std::string	stroutAllHaplo;
-	std::string WD1 = WD;
-	stroutHaplo = WD+="/Proband_Haplotypes.txt";
-	stroutAllHaplo = WD1+="/All_nodes_haplotypes.txt";
-	std::ofstream outHaplo(stroutHaplo.c_str());
-	std::ofstream outAllHaplo(stroutAllHaplo.c_str());
+	stroutHaplo = WD + "/Proband_Haplotypes.txt";
+	stroutAllHaplo = WD + "/All_nodes_haplotypes.txt";
+	std::ofstream outHaplo(stroutHaplo);
+	std::ofstream outAllHaplo(stroutAllHaplo);
 	
 	outHaplo << lSimul << ";" << lNProposant << "\n";
 	outAllHaplo << lSimul << ";" << lNProposant << "\n";
@@ -393,15 +394,15 @@ void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncet
 		StartSortPrioriteArbre(NoeudAnc[i],Ordre,&NOrdre,OrdreSaut); // les infos de NoeudAnc sont pointes par Ordre dans "le bon ordre".
 
 	std::mt19937 my_rng = std::mt19937(seed);
-	Crossovers crossovers();
+	Crossovers crossovers;
   
-	void (Crossovers::*SampleCO)(int, const double&, const double&, int&, std::mt19937&, double*);
+	void (Crossovers::*SampleCO)(const int&, double*, double*, int&, std::mt19937&, double*);
 	
-	if (model==1) SampleCo=&Crossover::Poisson_CO;
-	else if (model==2) SampleCo=&Crossover::Poisson_ZT;
+	if (model==1) SampleCO=&Crossovers::Poisson_CO;
+	else if (model==2) SampleCO=&Crossovers::Poisson_ZT;
 	else if (model==3){
-		SampleCO=&Crossover::Gamma_CO;
-		init_gamma(param[0], param[1], Morgan_Len[0], Morgan_Len[1]);
+		SampleCO=&Crossovers::Gamma_CO;
+		crossovers.init_gamma(probRecomb[0], probRecomb[1], Morgan_Len[0], Morgan_Len[1]);
 	}
 
 	//Simulation
@@ -411,14 +412,17 @@ void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncet
 	double CO_arrayM[20]; //hold crossover positions for Mother's chromsome
 
 	int nbRecomb1;
-	int nbRecomb2;	
+	int nbRecomb2;
+	
+	std::uniform_real_distribution<> u_dist(0, 1);
+
 	for(int csimul=0;csimul<lSimul; csimul++)
 	{
 		int clesSim= cleFixe;
 		
 		for(int i=0;i<NOrdre;i++) {
-			(crossovers.*SampleCO)(1, probRecomb, Morgan_Len, nbRecomb1, my_rng, Co_arrayF[0]);
-			(crossovers.*SampleCO)(2, probRecomb, Morgan_Len, nbRecomb2, my_rng, Co_arrayM[0]);
+			(crossovers.*SampleCO)(1, probRecomb, Morgan_Len, nbRecomb1, my_rng, CO_arrayF);
+			(crossovers.*SampleCO)(2, probRecomb, Morgan_Len, nbRecomb2, my_rng, CO_arrayM);
 
 			outAllHaplo <<"{"<< csimul+1 <<";"<< Ordre[i]->nom <<";" ;
 			
@@ -428,7 +432,7 @@ void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncet
 					pHap = u_dist(my_rng);
 					outAllHaplo << pHap;
 					for(int j=0; j<nbRecomb1; j++){
-						outAllHaplo << std::fixed << "," << double(round(Co_arrayF[j]*precision)/precision);
+						outAllHaplo << std::fixed << "," << double(round(CO_arrayF[j]*precision)/precision);
 					}
 					makeRecombF(Ordre[i], hapRef, pHap, nbRecomb1, CO_arrayF, clesSim);
 					outAllHaplo << ";";
@@ -491,7 +495,7 @@ void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncet
 					outAllHaplo <<std::fixed<< ";" << tmp->hap << ";" <<  double(round(pos*precision)/precision) ;// on normalise a 1 en divisant par taille_tot (*plus necessaire)
 				}
 				
-				hap << "}";
+				outAllHaplo << "}";
 				tmp = (*hapRef).find(Ordre[i]->clesHaplo_2)->second;
 				pos = tmp->pos;
 				if(pos == -1.0) pos = 1;
@@ -661,7 +665,7 @@ void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncet
   
 // }
 
-
+//F for father, not female
 void makeRecombF( CIndSimul *Ordre_tmp, std::unordered_map<int, haplotype*> *hapRef, double probHap, int nbRecomb, double *posRecomb, int &cle )
 {
 
@@ -683,7 +687,7 @@ void makeRecombF( CIndSimul *Ordre_tmp, std::unordered_map<int, haplotype*> *hap
     (*hapRef)[cle++] = hapChild_1;
 }
 
-
+//M for mother, not male
 void makeRecombM( CIndSimul *Ordre_tmp, std::unordered_map<int, haplotype*> *hapRef, double probHap, int nbRecomb, double *posRecomb, int &cle )
 {
     haplotype *merehap1, *merehap2;
@@ -697,7 +701,7 @@ void makeRecombM( CIndSimul *Ordre_tmp, std::unordered_map<int, haplotype*> *hap
 		merehap2=(*hapRef).find(Ordre_tmp->mere->clesHaplo_1)->second;
 	}
 
-    haplotype *hapChild_2 = new haplotyp  e();
+    haplotype *hapChild_2 = new haplotype();
     haplotype *hapChild_deb2 = hapChild_2;
     recombine(merehap1, merehap2, hapChild_deb2, nbRecomb, posRecomb);
     Ordre_tmp->clesHaplo_2 = cle;

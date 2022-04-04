@@ -575,11 +575,11 @@ RcppExport SEXP SPLUSCGCumuldirect(SEXP smatriceCG, SEXP slNProposant, SEXP splA
 /// **********
 //	DIVERS
 // *********
-RcppExport SEXP SPLUSSimulHaplo(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, SEXP sAncestors, SEXP sLenAncestors, SEXP snSimul, SEXP sProbRecomb, SEXP reconstruction, SEXP sBP, SEXP sWD, SEXP sPathToHap, SEXP sPathToMap, SEXP sSeed, SEXP sNumRecomb, SEXP sNumMeioses)
-{
+RcppExport SEXP SPLUSSimulHaplo(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, SEXP sAncestors, SEXP sLenAncestors, SEXP snSimul, SEXP sProbRecomb, SEXP sMorgan_Len, SEXP smodel, SEXP reconstruction, SEXP sBP, SEXP sWD, SEXP sPathToHap, SEXP sPathToMap, SEXP sSeed, SEXP sNumRecomb, SEXP sNumMeioses)
+{  
 	
-	int * Genealogie, * proposant, * ancetre, * nproposant, * nancetre, * nSimul, * rec, * seed, * NumMeioses, * NumRecomb;
-	double * probRecomb, *BP;
+	int * Genealogie, * proposant, * ancetre, * nproposant, * nancetre, * nSimul, * rec, * seed, * model, * NumMeioses, * NumRecomb;
+	double * probRecomb, *BP, *Morgan_Len;
 
 	Rcpp::IntegerVector lNumRecomb  ( sNumRecomb);
 	Rcpp::IntegerVector lNumMeioses ( sNumMeioses);	
@@ -588,15 +588,19 @@ RcppExport SEXP SPLUSSimulHaplo(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, S
 	Rcpp::IntegerVector lproposant	( sProbands );
 	Rcpp::IntegerVector lancetre	( sAncestors );
 	Rcpp::NumericVector lprobRecomb ( sProbRecomb );
+	Rcpp::NumericVector lMorgan_Len ( sMorgan_Len);
 	
 	NumMeioses  = INTEGER   (sNumMeioses);
 	NumRecomb   = INTEGER   (sNumRecomb);
 	seed 		= INTEGER   (sSeed);
+	model       = INTEGER   (smodel);
+
 	rec 		= INTEGER   (reconstruction);
 	Genealogie	= INTEGER	(lGenealogie);
 	proposant	= INTEGER	(lproposant);
 	ancetre		= INTEGER	(lancetre);
 	probRecomb 	= REAL		(lprobRecomb);
+	Morgan_Len  = REAL		(lMorgan_Len);
 	BP			= REAL 		(sBP);
 	nproposant	= INTEGER	(sLenPro);
 	nancetre	= INTEGER	(sLenAncestors);
@@ -610,7 +614,7 @@ RcppExport SEXP SPLUSSimulHaplo(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, S
 	hapRef[0]=hapVide;
 
 	std::string WD = Rcpp::as<std::string>(sWD);
-	simulhaplo(Genealogie, proposant, *nproposant, ancetre, *nancetre, *nSimul, probRecomb, &hapRef, WD, *seed, NumRecomb, NumMeioses);	
+	simulhaplo(Genealogie, proposant, *nproposant, ancetre, *nancetre, *nSimul, probRecomb, Morgan_Len, *model, &hapRef, WD, *seed, NumRecomb, NumMeioses);	
 
 	if (*rec == 1){
 		std::string PathToHap = Rcpp::as<std::string>(sPathToHap);

@@ -18,7 +18,7 @@ int simul(int* Genealogie, int* plProposant, int* plProEtat,int lNProposant, int
 		int lSimul, double* pdRetConj,double* pdRetSimul,double* pdRetProp,double* probRecomb,double probSurvieHomo,int printprogress);
 
 void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncetre, int lNAncetre,
-		int lSimul, double* probRecomb, std::unordered_map<int,haplotype*> *hapRef, std::string WD, int seed, int* NumRecomb, int* NumMeioses);
+		int lSimul, double* probRecomb, double* Morgan_Len, int model, std::unordered_map<int,haplotype*> *hapRef, std::string WD, int seed, int* NumRecomb, int* NumMeioses);
 
 // int getNumberRec(double* probRecomb, int sex);
 // double getRandomNumber(int exponential);
