@@ -185,26 +185,24 @@ void Crossovers::Poisson_ZT(const int &sex, double *param, double *Morgan_len, i
 
 void Crossovers::init_gamma(double& paramF,  double& paramM,  double& Morgan_LenF,  double& Morgan_LenM){
 	double x;
-	//Number of bins is 10,000
+	//Number of bins is 10,000, these are the bins for reimann sum
+	//Morgan_Len/10000 is the delta x of the integral
+	//gamma_q is 1-CDF. We multiply by 2 because we are dividing by mean of regular distribution (which has mean 1/2)
+	
 	x= Morgan_LenF/10000;
-	first_arrival[0][0] = 2 * boost::math::gamma_q(paramF, 2*paramF*x) * 1/10000;
+	first_arrival[0][0] = 2 * boost::math::gamma_q(paramF, 2*paramF*x) * Morgan_LenF/10000;
 
 	for ( int i=1; i<10000; i++){
 		x = Morgan_LenF*(i+1)/10000;
-		first_arrival[0][i] = 2 *  boost::math::gamma_q(/*shape=*/ paramF, 2*paramF*x) + first_arrival[0][i-1];
+		first_arrival[0][i] = 2 *  boost::math::gamma_q(/*shape=*/ paramF, 2*paramF*x) * Morgan_LenF/10000 + first_arrival[0][i-1];
 	}	
 
-	if(!(paramF==paramM && Morgan_LenF==Morgan_LenM)){
-		first_arrival[1][0] = 2 * boost::math::gamma_q(paramM, 2*paramM*x) * 1/10000;
-		for ( int i=1; i<10000; i++){
-			x = Morgan_LenM*(i+1)/10000;
-			first_arrival[1][i] = 2 *  boost::math::gamma_q(/*shape=*/ paramM, 2*paramM*x) + first_arrival[1][i-1];
-		}		
-	}
-	else{
-		for ( int i=0; i<10000; i++){
-			first_arrival[1][i] = first_arrival[0][i];
-		}
+	x= Morgan_LenM/10000;
+	first_arrival[1][0] = 2 * boost::math::gamma_q(paramM, 2*paramM*x) * Morgan_LenM/10000;
+
+	for ( int i=1; i<10000; i++){
+		x = Morgan_LenM*(i+1)/10000;
+		first_arrival[1][i] = 2 *  boost::math::gamma_q(/*shape=*/ paramM, 2*paramM*x) * Morgan_LenM/10000 + first_arrival[1][i-1];
 	}
 }
 
