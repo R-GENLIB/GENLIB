@@ -98,7 +98,8 @@ gen.simuProb = function(gen, pro, statePro, ancestors, stateAncestors, simulNo=5
 }
 #print.it = F, 
 
-gen.simuHaplo = function (gen, pro, ancestors, simulNo = 1, model =1, RecombRate=c(1,1), MorganLen=c(3,3), Reconstruction =0, BP=0, Hapfile=NULL, Mapfile=NULL, seed= 0, outDir = getwd()){
+gen.simuHaplo = function (gen, pro=NULL, ancestors=NULL, simulNo = 1, model =1, model_params=c(1,1), cMorganLen=c(3,3), 
+							BP, convert_dist=0, physical_map_Mo = NULL, physical_map_Fa = NULL, seed= 0, outDir = getwd()){
 	if(!is(gen, "GLgen"))
 		stop("Invalid parameter: gen must be an instance of Glgen (see gen.genealogy)")
 	if(!is(pro, "numeric") )
@@ -107,39 +108,56 @@ gen.simuHaplo = function (gen, pro, ancestors, simulNo = 1, model =1, RecombRate
 		stop("Invalid parameter: ancestor must be numeric vector")
 	if(simulNo <= 0)
 		stop("Invalid parameter: simulNo must be greater than zero")
-	if(!is(RecombRate, "numeric"))
-		stop("Recombination rate must be a numeric vector ")
+	if(!is(model_params, "numeric"))
+		stop("Invalid parameter: model_params must be a numeric vector")
+
 	#comparisons to NULL don't produce boolean value	
 	#if(Reconstruction==1 & (Hapfile==NULL | Mapfile==NULL))
 		#stop("If reconstruction is set to 1 must specify the hap and map files")
-	if(Reconstruction==1 & BP==0)
-		stop("If reconstruction is set to 1, you must specify the size of the segment in BP")
-	if(Reconstruction==1 & (is.null(Hapfile) | is.null(Mapfile)))
-		stop("If reconstruction is set to 1, you must provide a hap file and map file")		
-
-	if(Reconstruction == 1){
-		pathHap<-normalizePath(Hapfile, mustWork=TRUE)
-		pathMap<-normalizePath(Mapfile, mustWork=TRUE)
-	}
-	else {
-		pathHap=""
-		pathMap=""
-	}
-
-	#Add in summary results, num meioses, num recombinations per simulation
-	numMeioses<-integer(simulNo)
-	numRecomb<-integer(simulNo)
-	simulCount<-c(1:simulNo)
+	# if(Reconstruction==1 & BP==0)
+	# 	stop("If reconstruction is set to 1, you must specify the size of the segment in BP")
+	# if(Reconstruction==1 & (is.null(Hapfile) | is.null(Mapfile)))
+	# 	stop("If reconstruction is set to 1, you must provide a hap file and map file")		
+	if(is.null(ancestors))
+		ancestors = gen.founder(gen)
+	if(is.null(pro))
+		pro=gen.pro(gen)
 	if(seed==0)
-		seed=abs(.Random.seed[5])
-	message("seed: ", seed)
-	.Call("SPLUSSimulHaplo", gen@.Data, pro, length(pro), ancestors, length(ancestors), as.integer(simulNo), RecombRate, MorganLen, model, as.integer(Reconstruction), BP, outDir, pathHap, pathMap, as.integer(seed), numRecomb, numMeioses, package="GENLIB")
-	if(Reconstruction==0){
-		message("\n output files: ", outDir, "/All_nodes_haplotypes.txt \n", outDir, "/Proband_Haplotypes.txt \n")
-	}else{ 
-		message("output files: ", outDir, "/All_nodes_haplotypes.txt \n", outDir, "/Proband_Haplotypes.txt \n", outDir, "/reconstructed_haplotypes.txt")
+		seed=abs(.Random.seed[5]) 
+	
+	#check that the physical-genetic maps have correct format if converting from genetic distance to physical distance
+	if (convert==1){
+		if(is.null(physical_map_Fa) & is.null(physical_map_Mo)){
+			message("No map function specified. Physical distance will be assumed to be 1:1 with genetic distance")
+			convert = 2
+			bp_map_FA = 0
+			cm_map_FA = 0
+			bp_map_MO = 0
+			cm_map_MO = 0
+		}
+		if(!is.null(physical_map_Fa) & is.null(physical_map_Mo)){
+			message("A physical map is specified for Male but not Female individuals. The Male map will be used for females as well\n")
+
+		if(is.null(physical_map_Fa) & !(is.null(physical_map_Mo)))
+			message("A physical map is specified for Female but not male individuals. The Female map will be used for males as well\n")
+		if(sum(c("bp","cm") %in% colnames(physical_map_Fa)) < 2){
+			stop("The physical map")
+		}
+
 	}
-	return(cbind(simulNo=simulCount,numRecomb=numRecomb,numMeioses=numMeioses))
+
+	if(!is.null(physical_map_Fa) & !is.null(physical_map_Mo)){
+		bp_map_FA = physical_map_Fa$bp
+		cm_map_FA = physical_map_Fa$cm
+		bp_map_MO = physical_map_Mo$bp
+		cm_map_MO = physical_map_Mo$cm
+	}
+	message("seed: ", seed,"\n")
+	.Call("SPLUSSimulHaplo", gen@.Data, pro, length(pro), ancestors, length(ancestors), as.integer(simulNo), RecombRate, MorganLen, model, 
+			as.integer(convert_dist), as.integer(BP), outDir, as.integer(seed), package="GENLIB")
+
+	message("output files: ", outDir, "/All_nodes_haplotypes.txt \n", outDir, "/Proband_Haplotypes.txt \n")
+
 }
 
 
