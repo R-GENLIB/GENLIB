@@ -575,7 +575,7 @@ RcppExport SEXP SPLUSCGCumuldirect(SEXP smatriceCG, SEXP slNProposant, SEXP splA
 /// **********
 //	DIVERS
 // *********
-RcppExport SEXP SPLUSSimulHaplo(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, SEXP sAncestors, SEXP sLenAncestors, SEXP snSimul, SEXP sProbRecomb, SEXP sMorgan_Len, SEXP smodel, SEXP reconstruction, SEXP sBP, SEXP sWD, SEXP sPathToHap, SEXP sPathToMap, SEXP sSeed, SEXP sNumRecomb, SEXP sNumMeioses)
+RcppExport SEXP SPLUSSimulHaplo(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, SEXP sAncestors, SEXP sLenAncestors, SEXP snSimul, SEXP sProbRecomb, SEXP sMorgan_Len, SEXP smodel, SEXP reconstruction, SEXP sBP, SEXP sWD, SEXP sSeed, SEXP sNumRecomb, SEXP sNumMeioses)
 {  
 	
 	int * Genealogie, * proposant, * ancetre, * nproposant, * nancetre, * nSimul, * rec, * seed, * model, * NumMeioses, * NumRecomb;
@@ -616,12 +616,12 @@ RcppExport SEXP SPLUSSimulHaplo(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, S
 	std::string WD = Rcpp::as<std::string>(sWD);
 	simulhaplo(Genealogie, proposant, *nproposant, ancetre, *nancetre, *nSimul, probRecomb, Morgan_Len, *model, &hapRef, WD, *seed);	
 
-	if (*rec == 1){
-		std::string PathToHap = Rcpp::as<std::string>(sPathToHap);
-		std::string PathToMap = Rcpp::as<std::string>(sPathToMap);
-		std::string WD1 = WD;
-		reconstruct(WD,WD1+="/Proband_Haplotypes.txt",PathToHap, PathToMap, *BP);
-	}
+	// if (*rec == 1){
+	// 	std::string PathToHap = Rcpp::as<std::string>(sPathToHap);
+	// 	std::string PathToMap = Rcpp::as<std::string>(sPathToMap);
+	// 	std::string WD1 = WD;
+	// 	reconstruct(WD,WD1+="/Proband_Haplotypes.txt",PathToHap, PathToMap, *BP);
+	// }
 
 	return R_NilValue;
 }
