@@ -98,14 +98,11 @@ gen.simuProb = function(gen, pro, statePro, ancestors, stateAncestors, simulNo=5
 }
 #print.it = F, 
 
-gen.simuHaplo = function (gen, pro=NULL, ancestors=NULL, simulNo = 1, model =1, model_params=c(1,1), cMorganLen=c(3,3), 
-							BP, convert_dist=0, physical_map_Mo = NULL, physical_map_Fa = NULL, seed= 0, outDir = getwd()){
+gen.simuHaplo = function (gen, pro=NULL, ancestors=NULL, simulNo = 1, model =1, model_params=c(1,1), MorganLen=c(1,1), 
+							BP, physical_map_Mo = NULL, physical_map_Fa = NULL, seed= 0, outDir = getwd()){
 	if(!is(gen, "GLgen"))
 		stop("Invalid parameter: gen must be an instance of Glgen (see gen.genealogy)")
-	if(!is(pro, "numeric") )
-		stop("Invalid parameter: pro must be a numeric vector")
-	if(!is(ancestors, "numeric") )
-		stop("Invalid parameter: ancestor must be numeric vector")
+
 	if(simulNo <= 0)
 		stop("Invalid parameter: simulNo must be greater than zero")
 	if(!is(model_params, "numeric"))
@@ -125,36 +122,28 @@ gen.simuHaplo = function (gen, pro=NULL, ancestors=NULL, simulNo = 1, model =1, 
 	if(seed==0)
 		seed=abs(.Random.seed[5]) 
 	
-	#check that the physical-genetic maps have correct format if converting from genetic distance to physical distance
-	if (convert==1){
-		if(is.null(physical_map_Fa) & is.null(physical_map_Mo)){
-			message("No map function specified. Physical distance will be assumed to be 1:1 with genetic distance")
-			convert = 2
-			bp_map_FA = 0
-			cm_map_FA = 0
-			bp_map_MO = 0
-			cm_map_MO = 0
-		}
-		if(!is.null(physical_map_Fa) & is.null(physical_map_Mo)){
-			message("A physical map is specified for Male but not Female individuals. The Male map will be used for females as well\n")
 
-		if(is.null(physical_map_Fa) & !(is.null(physical_map_Mo)))
-			message("A physical map is specified for Female but not male individuals. The Female map will be used for males as well\n")
-		if(sum(c("bp","cm") %in% colnames(physical_map_Fa)) < 2){
-			stop("The physical map")
-		}
-
+	if(is.null(physical_map_Fa) & is.null(physical_map_Mo)){
+		message("No map function specified to convert genetic distance to physical. Assumed 1:1")
+		convert = 0
+		bp_map_FA = 0
+		cm_map_FA = 0
+		bp_map_MO = 0
+		cm_map_MO = 0
 	}
-
-	if(!is.null(physical_map_Fa) & !is.null(physical_map_Mo)){
+	else{
+		#need to check that the maps are valid
+		convert = 1
 		bp_map_FA = physical_map_Fa$bp
 		cm_map_FA = physical_map_Fa$cm
 		bp_map_MO = physical_map_Mo$bp
 		cm_map_MO = physical_map_Mo$cm
 	}
+	
 	message("seed: ", seed,"\n")
-	.Call("SPLUSSimulHaplo", gen@.Data, pro, length(pro), ancestors, length(ancestors), as.integer(simulNo), RecombRate, MorganLen, model, 
-			as.integer(convert_dist), as.integer(BP), outDir, as.integer(seed), package="GENLIB")
+	.Call("SPLUSSimulHaplo", gen@.Data, pro, length(pro), ancestors, length(ancestors), as.integer(simulNo), model_params, MorganLen, as.integer(model), 
+			as.integer(convert), as.integer(BP), as.integer(bp_map_FA), cm_map_FA, as.integer(bp_map_MO), cm_map_MO, 
+			outDir, as.integer(seed), package="GENLIB")
 
 	message("output files: ", outDir, "/All_nodes_haplotypes.txt \n", outDir, "/Proband_Haplotypes.txt \n")
 

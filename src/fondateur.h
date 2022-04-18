@@ -18,12 +18,17 @@ int simul(int* Genealogie, int* plProposant, int* plProEtat,int lNProposant, int
 		int lSimul, double* pdRetConj,double* pdRetSimul,double* pdRetProp,double* probRecomb,double probSurvieHomo,int printprogress);
 
 void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncetre, int lNAncetre,
-		int lSimul, double* probRecomb, double* Morgan_Len, int model, std::unordered_map<int,haplotype*> *hapRef, std::string WD, int seed);
+						int lSimul, double* probRecomb, double* Morgan_Len, int BP_len, int model, int convert,  
+						double* cm_map_FA, double* cm_map_MO, int* bp_map_FA, int* bp_map_MO, 
+						std::unordered_map<int,haplotype*> *hapRef, std::string WD, int seed);
 
 // int getNumberRec(double* probRecomb, int sex);
 // double getRandomNumber(int exponential);
 //int descendreHaplotypes(CIndSimul* Ordre_tmp, double probHap); //, /**/std::unordered_map<std::string, haplotype*>/* const std::unordered_map<std::string, haplotype*> &*/*hapRef);
 //void makeRecomb( CIndSimul* Ordre_tmp, std::unordered_map<int, haplotype*> *hapRef, double probHap, double posRecomb, int& cle );
+void no_convert(const int& nbrecomb, double* CO_array, const double& Morgan_len, const int& bp_len, int* bp_map, double* cm_map);
+void convert1(const int& nbrecomb, double* CO_array, const double& Morgan_len, const int& bp_len, int* bp_map, double* cm_map);
+
 void makeRecombM( CIndSimul* Ordre_tmp, std::unordered_map<int, haplotype*> *hapRef, double probHap, int nbRecomb, double* posRecomb, int& cle );
 void makeRecombF( CIndSimul* Ordre_tmp, std::unordered_map<int, haplotype*> *hapRef, double probHap, int nbRecomb, double* posRecomb, int& cle );
 

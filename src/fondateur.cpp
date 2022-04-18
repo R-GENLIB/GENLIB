@@ -39,7 +39,7 @@ Calcul et Analyse de diverse valeur d�riv� du gene fondateur
 #include <Rcpp/Function.h>
 #include <unordered_map>
 
-#include <boost/math/special_functions/gamma.hpp>
+#include "asa239.hpp"
 
 #ifdef NEG
 	#undef NEG
@@ -124,21 +124,19 @@ void Crossovers::Poisson_CO(const int &sex, double *param, double *Morgan_len, i
 	static std::poisson_distribution<int> p2_dist(param[1]);
 
 	if(sex==1){
-		int NumRecomb = p1_dist(mtgen); //number of recombination events 
-		
+		NumRecomb = p1_dist(mtgen); //number of recombination events 
 		for( int h=0; h<NumRecomb; h++ ) {
 			pos = u_dist(mtgen);
-			CO_array[h] = pos*Morgan_len[0]; 
+			CO_array[h] = pos; 
 		}
 		
 		std::sort(CO_array, CO_array + NumRecomb);
 	}
 	else{
-		int NumRecomb = p2_dist(mtgen); //number of recombination events 
-
+		NumRecomb = p2_dist(mtgen); //number of recombination events 
 		for( int h=0; h<NumRecomb; h++ ) {
 			pos = u_dist(mtgen);
-			CO_array[h] = pos*Morgan_len[1]; 
+			CO_array[h] = pos; 
 		}
 		
 		std::sort(CO_array, CO_array + NumRecomb);		
@@ -153,7 +151,7 @@ void Crossovers::Poisson_ZT(const int &sex, double *param, double *Morgan_len, i
 	static std::poisson_distribution<int> p2_dist(param[1]);
 
 	if(sex==1){
-		int NumRecomb = p1_dist(mtgen); //number of recombination events 
+		NumRecomb = p1_dist(mtgen); //number of recombination events 
 
 		while (NumRecomb == 0){
 			NumRecomb = p1_dist(mtgen);
@@ -161,13 +159,13 @@ void Crossovers::Poisson_ZT(const int &sex, double *param, double *Morgan_len, i
 		
 		for( int h=0; h<NumRecomb; h++ ) {
 			pos = u_dist(mtgen);
-			CO_array[h] = pos*Morgan_len[0]; 
+			CO_array[h] = pos; 
 		}
 		
 		std::sort(CO_array, CO_array + NumRecomb);
 	}
 	else{
-		int NumRecomb = p2_dist(mtgen); //number of recombination events 
+		NumRecomb = p2_dist(mtgen); //number of recombination events 
 
 		while (NumRecomb == 0){
 			NumRecomb = p2_dist(mtgen);
@@ -175,7 +173,7 @@ void Crossovers::Poisson_ZT(const int &sex, double *param, double *Morgan_len, i
 		
 		for( int h=0; h<NumRecomb; h++ ) {
 			pos = u_dist(mtgen);
-			CO_array[h] = pos*Morgan_len[1]; 
+			CO_array[h] = pos; 
 		}
 		
 		std::sort(CO_array, CO_array + NumRecomb);		
@@ -185,24 +183,26 @@ void Crossovers::Poisson_ZT(const int &sex, double *param, double *Morgan_len, i
 
 void Crossovers::init_gamma(double& paramF,  double& paramM,  double& Morgan_LenF,  double& Morgan_LenM){
 	double x;
+	int wasteman = 0;
+
 	//Number of bins is 10,000, these are the bins for reimann sum
 	//Morgan_Len/10000 is the delta x of the integral
 	//gamma_q is 1-CDF. We multiply by 2 because we are dividing by mean of regular distribution (which has mean 1/2)
 	
 	x= Morgan_LenF/10000;
-	first_arrival[0][0] = 2 * boost::math::gamma_q(paramF, 2*paramF*x) * Morgan_LenF/10000;
+	first_arrival[0][0] = 2 * (1-gammad(2*paramF*x, paramF, &wasteman)) * Morgan_LenF/10000;
 
 	for ( int i=1; i<10000; i++){
 		x = Morgan_LenF*(i+1)/10000;
-		first_arrival[0][i] = 2 *  boost::math::gamma_q(/*shape=*/ paramF, 2*paramF*x) * Morgan_LenF/10000 + first_arrival[0][i-1];
+		first_arrival[0][i] = 2 * (1-gammad(2*paramF*x, paramF, &wasteman)) * Morgan_LenF/10000 + first_arrival[0][i-1];
 	}	
 
 	x= Morgan_LenM/10000;
-	first_arrival[1][0] = 2 * boost::math::gamma_q(paramM, 2*paramM*x) * Morgan_LenM/10000;
+	first_arrival[1][0] = 2 * (1-gammad(2*paramM*x, paramM, &wasteman)) * Morgan_LenM/10000;
 
 	for ( int i=1; i<10000; i++){
 		x = Morgan_LenM*(i+1)/10000;
-		first_arrival[1][i] = 2 *  boost::math::gamma_q(/*shape=*/ paramM, 2*paramM*x) * Morgan_LenM/10000 + first_arrival[1][i-1];
+		first_arrival[1][i] = 2 *  (1-gammad(2*paramM*x, paramM, &wasteman)) * Morgan_LenM/10000 + first_arrival[1][i-1];
 	}
 }
 
@@ -214,7 +214,7 @@ void Crossovers::Gamma_CO(const int &sex, double *param, double *Morgan_len, int
 	double current_pos;
 	double chiasma_pos[20];
 	int Num_Chiasmata = 0;
-
+	
 	static std::uniform_real_distribution<> u_dist(0, 1);
 	static std::gamma_distribution<> g1_dist(param[0],1/(2*param[0]));
 	static std::gamma_distribution<> g2_dist(param[1],1/(2*param[1]));
@@ -247,7 +247,6 @@ void Crossovers::Gamma_CO(const int &sex, double *param, double *Morgan_len, int
 			//mid will end up being the index of the smallest value (step of reimann partial sums) we are less than or equal to
 			chiasma_pos[0] = mid*step + 0.5*step;
 		}
-		Rcpp::Rcout << Num_Chiasmata << std::endl;
 
 		current_pos = chiasma_pos[0];
 		//After finding the first arrival time we can  use std::gamma_distribution for the rest
@@ -263,7 +262,6 @@ void Crossovers::Gamma_CO(const int &sex, double *param, double *Morgan_len, int
 				counter 	 = counter + 1;
 				interrarival = g1_dist(mtgen);
 			}
-			Rcpp::Rcout << Num_Chiasmata << std::endl;
 
 		}
 		else{
@@ -286,7 +284,7 @@ void Crossovers::Gamma_CO(const int &sex, double *param, double *Morgan_len, int
 		for (int i=0; i<Num_Chiasmata; i++){
 			u_rand = u_dist(mtgen);
 			if (u_rand < 0.50){
-				CO_array[counter] = chiasma_pos[i];
+				CO_array[counter] = chiasma_pos[i]/length;
 				counter   += 1;
 				NumRecomb += 1;
 			}
@@ -295,21 +293,24 @@ void Crossovers::Gamma_CO(const int &sex, double *param, double *Morgan_len, int
 }
 
 void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncetre, int lNAncetre,
-						int lSimul, double* probRecomb, double* Morgan_Len, int kBP, int model, 
-						double* cm_map_FA, double* cm_map_MO, int* kbp_map_FA, int* kbp_map_MO, int maplen_FA, int maplen_MO,
+						int lSimul, double* probRecomb, double* Morgan_Len, int BP_len, int model, int convert,  
+						double* cm_map_FA, double* cm_map_MO, int* bp_map_FA, int* bp_map_MO, 
 						std::unordered_map<int,haplotype*> *hapRef, std::string WD, int seed) 
 {
-	double precision = 1000000000.0;
 	std::string stroutHaplo = WD + "/Proband_Haplotypes.txt";
 	std::string	stroutAllHaplo = WD + "/All_nodes_haplotypes.txt";
 
 	std::ofstream outHaplo(stroutHaplo);
 	std::ofstream outAllHaplo(stroutAllHaplo);
 	
-	outHaplo << lSimul << ";" << lNProposant << "\n";
+	outHaplo 	<< lSimul << ";" << lNProposant << "\n";
 	outAllHaplo << lSimul << ";" << lNProposant << "\n";
-
  
+	outHaplo 	<< std::fixed;
+	outAllHaplo << std::fixed;
+
+	Rcpp::Rcout << model << "\n" ;
+
 	try{
 
 	//CREATION DE TABLEAU D'INDIVIDU
@@ -402,57 +403,41 @@ void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncet
 		crossovers.init_gamma(probRecomb[0], probRecomb[1], Morgan_Len[0], Morgan_Len[1]);
 	}
 
-	void (*convert_dist)(const int&, double*, const double&, const int&);
-	//convert=0 : do not convert from genetic distance to physical. convert =1 : convert from genetic distance to physical using a user-specified map. conver =2 : convert from genetic distance to physical assuming 1:1 conversion.
-	if (convert==0) convert_dist = &no_convert;
-	else if (convert == 1){
+	void (*convert_dist)(const int&, double*, const double&, const int&, int*, double*); //(nbrecomb, CO_array, Morgan_len, bp_len, bp_map, cm_map)
 
-	}
-
-	std::string endval; //this is how we mark the end position of a chromosome. Used to be 1 when the positions were [0,1] but now can print in terms of cM distance and BP distance so the last value is not always the same
-	//Simulation
+	if 		(convert == 0) convert_dist = &no_convert;  // no genetic/physical map is specified, then no need to scale wrt physical distance (assumed 1:1)
+	else if (convert == 1) convert_dist = &convert1; 	// genetic/physical map is specified
+	
 	double pHap;
 
 	double CO_arrayF[20]; //hold crossover positions for Father's chromosome
 	double CO_arrayM[20]; //hold crossover positions for Mother's chromsome
 
-	int nbRecomb1;
-	int nbRecomb2;
+	int nbRecomb1 =0;
+	int nbRecomb2 =0;
 	
+	Rcpp::Rcout << probRecomb[0] << " " << Morgan_Len[0] << "\n";
+	Rcpp::Rcout << probRecomb[1] << " " << Morgan_Len[1] << "\n";
+
 	std::uniform_real_distribution<> u_dist(0, 1);
 
+	//simulation loop
 	for(int csimul=0;csimul<lSimul; csimul++)
 	{
 		int clesSim= cleFixe;
 		
 		for(int i=0;i<NOrdre;i++) {
-			//Simulate meiosis in the parents, store the location of crossovers (in genetic distance) in CO_array.
+			//Simulate meiosis in the parents, store the location of crossovers (in genetic distance scaled to [0,1]) in CO_array.
 			(crossovers.*SampleCO)(1, probRecomb, Morgan_Len, nbRecomb1, my_rng, CO_arrayF);
 			(crossovers.*SampleCO)(2, probRecomb, Morgan_Len, nbRecomb2, my_rng, CO_arrayM);
 
-			//The positions of the crossovers are stored in CO_arrayF, CO_arrayM, in terms of genetic distance
-			//We need to convert it to physical distance,
-			for (int k=0; k<nbRecomb1; k++){
-				double physical_distance;
-				double genetic_distance = CO_arrayF[k];
+			Rcpp::Rcout << nbRecomb1 << " " << nbRecomb2;
 
-				int map_index = 0;
-				while(genetic_distance > cm_map_FA[map_index]) map_index++;
+			//Now the locations of crossovers in CO_array will be converted to physical distance. Still [0,1] but now in physical distance 
+			convert_dist(nbRecomb1, CO_arrayF, Morgan_Len[0], BP_len, bp_map_FA ,cm_map_FA);
+			convert_dist(nbRecomb2, CO_arrayM, Morgan_Len[1], BP_len, bp_map_MO ,cm_map_MO);
 
-				physical_distance = kbp_map_FA[map_index-1]  + (kbp_map_FA[map_index] - kbp_map_FA[map_index-1])*(genetic_distance - cm_map_FA[map_index-1])/(cm_map_FA[map_index] - cm_map_FA[map_index-1]);
-				CO_arrayF[k] = physical_distance;
-			}
-
-			for (int k=0; k<nbRecomb2; k++){
-				double physical_distance;
-				double genetic_distance = CO_arrayM[k];
-
-				int map_index = 0;
-				while(genetic_distance > cm_map_MO[map_index]) map_index++;
-
-				physical_distance = kbp_map_MO[map_index-1]  + (kbp_map_MO[map_index] - kbp_map_MO[map_index-1])*(genetic_distance - cm_map_MO[map_index-1])/(cm_map_MO[map_index] - cm_map_MO[map_index-1]);
-				CO_arrayM[k] = physical_distance;
-			}
+			Rcpp::Rcout << " " << nbRecomb1 << " " << nbRecomb2 << "\n";
 
 			outAllHaplo <<"{"<< csimul+1 <<";"<< Ordre[i]->nom <<";" ;
 			
@@ -460,21 +445,15 @@ void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncet
 				outAllHaplo << nbRecomb1 <<",";
 				pHap = u_dist(my_rng); 
 
-				
-				WriteAllHaplo_prefix(nbRecomb1, CO_arrayF, pHap, 1)
-				makeRecombF(Ordre[i], hapRef, pHap, nbRecomb1, CO_arrayF, clesSim);
-
 				if(nbRecomb1 > 0){ //Recombination event in the father
-					pHap = u_dist(my_rng); 
 					outAllHaplo << pHap;
 					for(int j=0; j<nbRecomb1; j++){
-						outAllHaplo << std::fixed << "," << double(round(CO_arrayF[j]*precision)/precision);
+						outAllHaplo << "," << CO_arrayF[j];
 					}
 					makeRecombF(Ordre[i], hapRef, pHap, nbRecomb1, CO_arrayF, clesSim);
 					outAllHaplo << ";";
 				}			
 				else{ //If no recombination just pass one of father's chromosomes down 
-					pHap = u_dist(my_rng);
 					outAllHaplo << pHap << ",0;";
 					if(pHap<0.50){
 						Ordre[i]->clesHaplo_1=Ordre[i]->pere->clesHaplo_1;
@@ -491,12 +470,12 @@ void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncet
 
 			if(Ordre[i]->mere != NULL){
 				outAllHaplo << nbRecomb2 << ",";
-				if(nbRecomb2 > 0){ //Recombination event in mother
-					pHap = u_dist(my_rng);
-					outAllHaplo << pHap;
+				pHap = u_dist(my_rng);
 
+				if(nbRecomb2 > 0){ //Recombination event in mother
+					outAllHaplo << pHap;
 					for(int j=0;j<nbRecomb2;j++){
-						outAllHaplo << std::fixed << "," <<  double(round(CO_arrayM[j]*precision)/precision);
+						outAllHaplo << "," <<  CO_arrayM[j];
 					}
 
 					makeRecombM(Ordre[i], hapRef, pHap, nbRecomb2, CO_arrayM, clesSim);
@@ -518,20 +497,18 @@ void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncet
 				Ordre[i]->clesHaplo_2 = 0;
 			}
 
-
 			haplotype* tmp = (*hapRef).find(Ordre[i]->clesHaplo_1)->second;
-			writeAllHaplo(tmp, outAllHaplo);			
 
 			double pos = tmp->pos;
 			if(pos == -1.0) pos = 1;
 
 			for( int h=0; h<2; h++ ) {
-				outAllHaplo << "{" << 0 << ";" << tmp->hap << ";" << double(round(pos*precision)/precision) ; // on normalise a 1 en divisant par taille_tot (*plus necessaire)
+				outAllHaplo << "{" << 0 << ";" << tmp->hap << ";" << pos ; // on normalise a 1 en divisant par taille_tot (*plus necessaire)
 				while( tmp->next_segment != NULL) { 
 					tmp = tmp->next_segment;
 					pos = tmp->pos;
 					if(pos == -1.0) pos = 1;
-					outAllHaplo << ";" << tmp->hap << ";" <<  double(round(pos*precision)/precision) ;// on normalise a 1 en divisant par taille_tot (*plus necessaire)
+					outAllHaplo << ";" << tmp->hap << ";" <<  pos ;// on normalise a 1 en divisant par taille_tot (*plus necessaire)
 				}
 				
 				outAllHaplo << "}";
@@ -551,13 +528,13 @@ void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncet
 			outHaplo <<"{"<< csimul+1 <<";"<< NoeudPro[i]->nom << ";" << 0 << "}";
 
 			for( int h=0; h<2; h++ ) {
-				outHaplo << "{" << 0 << ";" << tmp->hap << ";" << double(round(pos*precision)/precision) ; // on normalise a 1 en divisant par taille_tot (*plus necessaire)
+				outHaplo << "{" << 0 << ";" << tmp->hap << ";" << pos ; // on normalise a 1 en divisant par taille_tot (*plus necessaire)
 		
 				while( tmp->next_segment != NULL) { 
 					tmp = tmp->next_segment;
 					pos = tmp->pos;
 					if(pos == -1.0) pos = 1;
-					outHaplo ";" << tmp->hap << ";" <<  double(round(pos*precision)/precision) ;// on normalise a 1 en divisant par taille_tot (*plus necessaire)
+					outHaplo << ";" << tmp->hap << ";" <<  pos;// on normalise a 1 en divisant par taille_tot (*plus necessaire)
 				}
 				
 				outHaplo << "}";
@@ -579,8 +556,6 @@ void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncet
 			}
 			delete tmp;
 		}
-
-
 	} // end of the for loop that goes through the # of simulations
 	
 	outHaplo.close();
@@ -604,31 +579,21 @@ void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncet
  } 
 }
 
-void writeAllHaplo(haplotype* tmp, std::ostream &OutAllHaplo){
-	double pos = tmp->pos;
-	if(pos == -1.0) pos = 1;
+void no_convert(const int& nbrecomb, double* CO_array, const double& Morgan_len, const int& bp_len, int* bp_map, double* cm_map){}
 
-	for( int h=0; h<2; h++ ) {
-		outAllHaplo << "{" << 0 << ";" << tmp->hap << ";" << double(round(pos*precision)/precision) ; // on normalise a 1 en divisant par taille_tot (*plus necessaire)
-		while( tmp->next_segment != NULL) { 
-			tmp = tmp->next_segment;
-			pos = tmp->pos;
-			if(pos == -1.0) pos = 1;
-			outAllHaplo << ";" << tmp->hap << ";" <<  double(round(pos*precision)/precision) ;// on normalise a 1 en divisant par taille_tot (*plus necessaire)
-		}
-		
-		outAllHaplo << "}";
-		tmp = (*hapRef).find(Ordre[i]->clesHaplo_2)->second;
-		pos = tmp->pos;
-		if(pos == -1.0) pos = 1;
-	}	
-	outAllHaplo << "\n";
+void convert1(const int& nbrecomb, double* CO_array, const double& Morgan_len, const int& bp_len, int* bp_map, double* cm_map){
+	for (int k=0; k<nbrecomb; k++){
+		double physical_distance;
+		double genetic_distance = CO_array[k]*Morgan_len;
 
+		int map_index = 0;
+		while(genetic_distance > cm_map[map_index]) map_index++;
+
+		physical_distance = bp_map[map_index-1]  + (bp_map[map_index] - bp_map[map_index-1])*(genetic_distance - cm_map[map_index-1])/(cm_map[map_index] - cm_map[map_index-1]);
+		CO_array[k] = physical_distance/bp_len;
+	}
 }
 
-void writeAllHaplo_noMap(std::ostream &AllHaplo, ){
-
-}
 
 // int getNumberRec(double* probRecomb, int sex, int seed)
 // {
