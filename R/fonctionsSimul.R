@@ -98,16 +98,25 @@ gen.simuProb = function(gen, pro, statePro, ancestors, stateAncestors, simulNo=5
 }
 #print.it = F, 
 
-gen.simuHaplo = function (gen, pro=NULL, ancestors=NULL, simulNo = 1, model =1, model_params=c(1,1), MorganLen=c(1,1), 
-							BP, physical_map_Mo = NULL, physical_map_Fa = NULL, seed= 0, outDir = getwd()){
+gen.simuHaplo = function (gen, pro=NULL, ancestors=NULL, simulNo = 1, model =1, model_params, cM_len, 
+							BP_len, physical_map_Mo = NULL, physical_map_Fa = NULL, seed= 0, all_nodes =0, outDir = getwd()){
 	if(!is(gen, "GLgen"))
 		stop("Invalid parameter: gen must be an instance of Glgen (see gen.genealogy)")
-
 	if(simulNo <= 0)
 		stop("Invalid parameter: simulNo must be greater than zero")
-	if(!is(model_params, "numeric"))
-		stop("Invalid parameter: model_params must be a numeric vector")
+	if(is.null(ancestors))
+		ancestors = gen.founder(gen)
+	if(is.null(pro))
+		pro=gen.pro(gen)
+	BP_len = as.integer(BP_len)
 
+
+	if(length(model_params) != 2)
+		stop("model_params must be a vector of length 2")
+	if(!is(cM_len, "numeric"))
+		stop("Invalid parameter: MorganLen must be a numeric vector")
+	if(length(cM_len) != 2)
+		stop("cM_len must be a vector of length 2")
 	#comparisons to NULL don't produce boolean value	
 	#if(Reconstruction==1 & (Hapfile==NULL | Mapfile==NULL))
 		#stop("If reconstruction is set to 1 must specify the hap and map files")
@@ -115,16 +124,13 @@ gen.simuHaplo = function (gen, pro=NULL, ancestors=NULL, simulNo = 1, model =1, 
 	# 	stop("If reconstruction is set to 1, you must specify the size of the segment in BP")
 	# if(Reconstruction==1 & (is.null(Hapfile) | is.null(Mapfile)))
 	# 	stop("If reconstruction is set to 1, you must provide a hap file and map file")		
-	if(is.null(ancestors))
-		ancestors = gen.founder(gen)
-	if(is.null(pro))
-		pro=gen.pro(gen)
+
 	if(seed==0)
 		seed=abs(.Random.seed[5]) 
 	
 
 	if(is.null(physical_map_Fa) & is.null(physical_map_Mo)){
-		message("No map function specified to convert genetic distance to physical. Assumed 1:1")
+		message("No map function specified to convert genetic distance to physical. Assumed linear along length of chromosome")
 		convert = 0
 		bp_map_FA = 0
 		cm_map_FA = 0
@@ -134,18 +140,35 @@ gen.simuHaplo = function (gen, pro=NULL, ancestors=NULL, simulNo = 1, model =1, 
 	else{
 		#need to check that the maps are valid
 		convert = 1
-		bp_map_FA = physical_map_Fa$bp
-		cm_map_FA = physical_map_Fa$cm
-		bp_map_MO = physical_map_Mo$bp
-		cm_map_MO = physical_map_Mo$cm
+		if(!("BP" %in% colnames(physical_map_Fa)) || !("cM" %in% colnames(physical_map_Fa)))
+			stop("column names 'BP', or 'cM' not in physical_map_Fa. Names are case-sensitive")
+		if(!("BP" %in% colnames(physical_map_Mo)) || !("cM" %in% colnames(physical_map_Mo)))
+			stop("column names 'BP', or 'cM' not in physical_map_Fa. Names are case-sensitive")
+		bp_map_FA = as.integer(physical_map_Fa$BP)
+		cm_map_FA = as.numeric(physical_map_Fa$cM)
+		bp_map_MO = as.integer(physical_map_Mo$BP)
+		cm_map_MO = as.numeric(physical_map_Mo$cM)
+
+		if((bp_map_FA[1]!=0) || (cm_map_FA[1]!=0))
+			stop("first element of BP and cM columns should be 0")
+		if((bp_map_MO[1]!=0) || (cm_map_MO[1]!=0))
+			stop("first element of BP and cM columns should be 0")
+		if((bp_map_FA[length(bp_map_FA)]!=BP_len) || (cm_map_FA[length(bp_map_FA)]!=cM_len[1]))
+			stop("last element of BP and cM columns should be BP_len, and cM_len, respectively")
+		if((bp_map_MO[length(bp_map_MO)]!=BP_len) || (cm_map_MO[length(bp_map_MO)]!=cM_len[2]))
+			stop("last element of BP and cM columns should be BP_len, and cM_len, respectively")
 	}
 	
 	message("seed: ", seed,"\n")
-	.Call("SPLUSSimulHaplo", gen@.Data, pro, length(pro), ancestors, length(ancestors), as.integer(simulNo), model_params, MorganLen, as.integer(model), 
-			as.integer(convert), as.integer(BP), as.integer(bp_map_FA), cm_map_FA, as.integer(bp_map_MO), cm_map_MO, 
-			outDir, as.integer(seed), package="GENLIB")
+	print(as.integer(all_nodes))
+	.Call("SPLUSSimulHaplo", gen@.Data, pro, length(pro), ancestors, length(ancestors), as.integer(simulNo), model_params, cM_len/100, as.integer(model), 
+			as.integer(convert), as.integer(BP_len), as.integer(bp_map_FA), cm_map_FA, as.integer(bp_map_MO), cm_map_MO, 
+			outDir, as.integer(all_nodes), as.integer(seed), package="GENLIB")
 
-	message("output files: ", outDir, "/All_nodes_haplotypes.txt \n", outDir, "/Proband_Haplotypes.txt \n")
+	if(all_nodes == 0)
+		message("output files: ", outDir, "/Proband_Haplotypes.txt \n")
+	else
+		message("output files: ", outDir, "/All_nodes_haplotypes.txt \n", outDir, "/Proband_Haplotypes.txt \n")
 
 }
 

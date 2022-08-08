@@ -580,11 +580,11 @@ RcppExport SEXP SPLUSCGCumuldirect(SEXP smatriceCG, SEXP slNProposant, SEXP splA
 /** \sa SPLUSSimulHaplo() */
 RcppExport SEXP SPLUSSimulHaplo(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, SEXP sAncestors, SEXP sLenAncestors, SEXP snSimul, SEXP sProbRecomb, 
 					SEXP sMorgan_Len, SEXP smodel, SEXP s_convert, SEXP sBP, SEXP s_bp_map_FA, SEXP s_cm_map_FA, SEXP s_bp_map_MO, SEXP s_cm_map_MO, 
-					SEXP sWD, SEXP sSeed)
+					SEXP sWD, SEXP sAll_node, SEXP sSeed)
 {  
 	
 	int * Genealogie, * proposant, * ancetre, * nproposant, * nancetre, * nSimul, * seed, * model;
-	int * BP, * convert, * bp_map_FA, *bp_map_MO;
+	int * BP, * convert, * bp_map_FA, *bp_map_MO, * All_node;
 	double * probRecomb, *Morgan_Len, *cm_map_FA, *cm_map_MO;	
 
 	Rcpp::IntegerVector lGenealogie	( sGenealogy );
@@ -598,6 +598,7 @@ RcppExport SEXP SPLUSSimulHaplo(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, S
 	Rcpp::NumericVector lMorgan_Len ( sMorgan_Len);
 
 	convert 	= INTEGER   (s_convert);
+	All_node    = INTEGER   (sAll_node);
 	seed 		= INTEGER   (sSeed);
 	model       = INTEGER   (smodel);
 	Genealogie	= INTEGER	(lGenealogie);
@@ -618,12 +619,13 @@ RcppExport SEXP SPLUSSimulHaplo(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, S
 	std::unordered_map<int, haplotype*> hapRef; // empty unordered_map
 	haplotype *hapVide = new haplotype();
 	hapVide->hap  = "0.1";
-	hapVide->pos  = -1.0;
+	hapVide->pos  = -1;
 	hapVide->fixe = 1;
 	hapRef[0]=hapVide;
 
 	std::string WD = Rcpp::as<std::string>(sWD);
-	simulhaplo(Genealogie, proposant, *nproposant, ancetre, *nancetre, *nSimul, probRecomb, Morgan_Len, *BP, *model, *convert, cm_map_FA, cm_map_MO, bp_map_FA, bp_map_MO, &hapRef, WD, *seed);	
+
+	simulhaplo(Genealogie, proposant, *nproposant, ancetre, *nancetre, *nSimul, probRecomb, Morgan_Len, *BP, *model, *convert, cm_map_FA, cm_map_MO, bp_map_FA, bp_map_MO, &hapRef, WD, *All_node, *seed);	
 
 	// if (*rec == 1){
 	// 	std::string PathToHap = Rcpp::as<std::string>(sPathToHap);
