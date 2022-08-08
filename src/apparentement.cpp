@@ -208,207 +208,211 @@ int Phis(int* Genealogie, int* proposant, int NProposant,int NiveauMin,int Nivea
  			return 0;
 }
 
+//disable multithreading for apple devices temporarily, sem_init, sem_destroy deprecated on OSX
+//gives compiler warning, CRAN removed GENLIB 
+//will replace eventually with std library threads
 
-// ********************************************************************
-//
-//			PUBLIC :VERSION MT 
-//
-// ********************************************************************
+#ifdef __APPLE__
+	// ********************************************************************
+	//
+	//			PUBLIC :VERSION MT 
+	//
+	// ********************************************************************
 
-struct CBASEMTPhisMT : public CMtGlobalMessage
-{
-	CIndSimul* ind1;
-	CIndSimul* ind2;
-	short niveauMax;		//Nombre de remonte dans la g�n�alogie
-
-	//Indice ou placer la reponse dans le tableau de reponse
-	int indice1;			
-	int indice2;			
-	
-	// C'est lui qui contient les valeurs de retours
-	Kinship4Struct elem; //Doit-�tre initialis�
-	double* ret;
-};
-
-BASEMT_CREATE_GLOBALMESSAGE(CBASEMTPhisMT,1)
-
-BASEMT_DEBUT_HELPERFCT(CBASEMTPhisMT,1)
-		//LANCEMENT DU CALCUL ET RECUPERE LE RESULTAT
-		Kinship4MT(BASEMT_HLPMES.ind1,BASEMT_HLPMES.ind2,
-				 BASEMT_HLPMES.niveauMax,BASEMT_HLPMES.niveauMax,BASEMT_HLPMES.elem); 
-BASEMT_FIN_HELPERFCT() 
-
-int PhisMT(int* Genealogie, int* proposant, int NProposant,int NiveauMin,int NiveauMax,
-	double* pdMoyenne, double *MatrixArray,int printprogress)
-{
-	try{
-	//TEST D'ERREUR DE BASE
-	if (NProposant<2){
-//		GENError("At least two probands are required for this function");
-		throw std::range_error("At least two probands are required for this function");
-		//GENError("Il faut au minimum 2 proposant pour utilise cette fonction");
-	}
-	if (NiveauMin<0){
-//		GENError("depthmax and depthmin must be greater than zero.");
-		throw std::range_error("depthmin and depthmin must be greater than zero.");
-		//GENError("Le niveau minimum et le niveau maximum doivent-�tre sup�rieur � z�ro");
-	}
-	if (NiveauMax<NiveauMin){
-//		GENError("depthmax must be greater or equal to depthmin");
-		throw std::range_error("depthmax must be greater or equal to depthmin");
-		//GENError("Le niveau maximum doit-�tre sup�rieur ou �gal au niveau minimum");
-	}
-	if (NiveauMax>SHRT_MAX){
-//		GENError("depthmax must be smaller than %d",SHRT_MAX);
-		char erreur[TAILLEDESCRIPTION];
-		sprintf(erreur, "depthmin must be smaller than %d",SHRT_MAX);
-		throw std::range_error(erreur);
-		//GENError("Le niveau maximum doit-�tre inf�rieur � %d",SHRT_MAX);
-	}
-	//CREATION DU TABLEAU D'INDIVIDU
-	int lNIndividu;
-	CIndSimul *Noeud=NULL;
-	LoadGenealogie(Genealogie,GFALSE,&lNIndividu,&Noeud);
-
-	//CREATION D'UN VECTEUR DE PROPOSANT
-	CIndSimul **NoeudPro=NULL;
-	LoadProposant(proposant,NProposant,&NoeudPro);
-
-	//Creation du tableau de Noeud
-	const short niveauMax = short(NiveauMax);
-	const int LongEcart		= NiveauMax-NiveauMin+1;
-	INITGESTIONMEMOIRE;
-		
-	//Initialisation de l'algorithme (valeur par niveau)
-	for(int Niveau=0;Niveau<LongEcart;Niveau++)
-		pdMoyenne[Niveau]=0.0;		
-	
-	//Initialisation des noeuds
-	for(int i=0;i<lNIndividu;i++)
-		Noeud[i].pGen=NULL;					
-	
-	
-	//Initialisation d'une structure multithread
-	BASEMT_DEBUTBOUCLE_INITMESSAGE(1) 		
-		//initialisation des donn�es Phis de la structure
-		BASEMT_MESSAGE(1).ind1=NULL;
-		BASEMT_MESSAGE(1).ind2=NULL;
-		BASEMT_MESSAGE(1).niveauMax=niveauMax;
+	struct CBASEMTPhisMT : public CMtGlobalMessage
+	{
+		CIndSimul* ind1;
+		CIndSimul* ind2;
+		short niveauMax;		//Nombre de remonte dans la g�n�alogie
 
 		//Indice ou placer la reponse dans le tableau de reponse
-		BASEMT_MESSAGE(1).indice1	= -1;
-		BASEMT_MESSAGE(1).indice2	= -1;	 			
+		int indice1;			
+		int indice2;			
 		
-		//Initialise la structure associe pour le retour de r�sultat
-		BASEMT_MESSAGE(1).ret = (double*) memalloc(NiveauMax+1,sizeof(double)); 
-		BASEMT_MESSAGE(1).elem.Initialise(niveauMax, BASEMT_MESSAGE(1).ret);
-		//Initialisation
-		for(int a=0;a<=niveauMax;a++)
-			BASEMT_MESSAGE(1).ret[a]=0.0;
+		// C'est lui qui contient les valeurs de retours
+		Kinship4Struct elem; //Doit-�tre initialis�
+		double* ret;
+	};
 
-	BASEMT_FINBOUCLE_INITMESSAGE(1)
+	BASEMT_CREATE_GLOBALMESSAGE(CBASEMTPhisMT,1)
 
-	//Iterateur pour toute la matrice
-	const int NItem	 = ((NProposant*NProposant)-NProposant)/2;
-	const int taillematrix	 = NProposant*NProposant;
-	
-	//Barre de progression
-	//Tres important.. initialise la s�maphore
-	Kinship4Struct::InitMT();
-	CREATE_PROGRESS_BAR_MATRIX(NProposant,printprogress)
-	for(int cPro1=0;cPro1<NProposant;++cPro1)
+	BASEMT_DEBUT_HELPERFCT(CBASEMTPhisMT,1)
+			//LANCEMENT DU CALCUL ET RECUPERE LE RESULTAT
+			Kinship4MT(BASEMT_HLPMES.ind1,BASEMT_HLPMES.ind2,
+					BASEMT_HLPMES.niveauMax,BASEMT_HLPMES.niveauMax,BASEMT_HLPMES.elem); 
+	BASEMT_FIN_HELPERFCT() 
+
+	int PhisMT(int* Genealogie, int* proposant, int NProposant,int NiveauMin,int NiveauMax,
+		double* pdMoyenne, double *MatrixArray,int printprogress)
 	{
-		for(int cPro2=cPro1;cPro2<NProposant;++cPro2)
-		{
-			/*
-			if (cPro2==cPro1)
-			{
-				for(int a=0;a<LongEcart;a++)
-					MatrixArray[(a*taillematrix)+cPro1*NProposant+cPro2]=0.5;					
-			}
-			else
-			{*/
-				//Partie 2: EBRANCHER L'ARBRE, ORGANISER LE NOEUD EN VECTEUR EN RESPECTANT PRECEDENCE
-  				//Calcul de la valeur de retours
-				 
-				BASEMT_DEBUT_REQUETE(1) 
-					//R�supere le r�sultat de phi
-					if (BASEMT_MESSAGE(1).indice1!=-1)
-					{
-						//Recupere le r�sultat de phideep				
-						double* retour	= BASEMT_MESSAGE(1).ret;
-						const int ind1	= BASEMT_MESSAGE(1).indice1;
-						const int ind2	= BASEMT_MESSAGE(1).indice2;
-						
-						for(int a=0;a<LongEcart;a++)
-						{
-							if (retour[a]<0.5)
-								pdMoyenne[a]+=retour[a+NiveauMin];
-							
-							MatrixArray[(a*taillematrix)+ind1*NProposant+ind2]=retour[a+NiveauMin];
-							MatrixArray[(a*taillematrix)+ind2*NProposant+ind1]=retour[a+NiveauMin];					
-						}	
-						
-						//remise � zero de phi deep
-						for(int a=0;a<=niveauMax;a++)
-							retour[a]=0.0;
-					}
-					//Parametre pour un nouveau calcul de phi
-					BASEMT_MESSAGE(1).indice1 = cPro1;
-					BASEMT_MESSAGE(1).indice2 = cPro2;
-					BASEMT_MESSAGE(1).ind1=NoeudPro[cPro1];
-					BASEMT_MESSAGE(1).ind2=NoeudPro[cPro2];						
-				BASEMT_FIN_REQUETE(1)
-
-				//Affichage des progress
-				INCREMENT_PROGRESS_BAR()
-			//}			
-
-		}//Fin it�rateur proposant 2
-		
-	}//Fin it�rateur proposant 1	
-
-	//Fermeture des threads
-	BASEMT_DEBUT_FERMETURE(1)
-		//RECUPERE LES DERNIERS RESULTATS DE PHI S'IL SONT VALIDE
-		if (BASEMT_MESSAGE(1).indice1!=-1)
-		{
-			//Recupere le r�sultat de phideep				
-			double* retour	= BASEMT_MESSAGE(1).ret;
-			const int ind1	= BASEMT_MESSAGE(1).indice1;
-			const int ind2	= BASEMT_MESSAGE(1).indice2;
-			
-			for(int a=0;a<LongEcart;a++)
-			{
-				if (retour[a]<0.5)
-					pdMoyenne[a]+=retour[a+NiveauMin];
-				
-				MatrixArray[(a*taillematrix)+ind1*NProposant+ind2]=retour[a+NiveauMin];
-				MatrixArray[(a*taillematrix)+ind2*NProposant+ind1]=retour[a+NiveauMin];					
-			}	
-			
-			//remise � zero de phi deep
-			for(int a=0;a<=niveauMax;a++)
-				retour[a]=0.0;
+		try{
+		//TEST D'ERREUR DE BASE
+		if (NProposant<2){
+	//		GENError("At least two probands are required for this function");
+			throw std::range_error("At least two probands are required for this function");
+			//GENError("Il faut au minimum 2 proposant pour utilise cette fonction");
 		}
-	BASEMT_FIN_FERMETURE(1)
+		if (NiveauMin<0){
+	//		GENError("depthmax and depthmin must be greater than zero.");
+			throw std::range_error("depthmin and depthmin must be greater than zero.");
+			//GENError("Le niveau minimum et le niveau maximum doivent-�tre sup�rieur � z�ro");
+		}
+		if (NiveauMax<NiveauMin){
+	//		GENError("depthmax must be greater or equal to depthmin");
+			throw std::range_error("depthmax must be greater or equal to depthmin");
+			//GENError("Le niveau maximum doit-�tre sup�rieur ou �gal au niveau minimum");
+		}
+		if (NiveauMax>SHRT_MAX){
+	//		GENError("depthmax must be smaller than %d",SHRT_MAX);
+			char erreur[TAILLEDESCRIPTION];
+			sprintf(erreur, "depthmin must be smaller than %d",SHRT_MAX);
+			throw std::range_error(erreur);
+			//GENError("Le niveau maximum doit-�tre inf�rieur � %d",SHRT_MAX);
+		}
+		//CREATION DU TABLEAU D'INDIVIDU
+		int lNIndividu;
+		CIndSimul *Noeud=NULL;
+		LoadGenealogie(Genealogie,GFALSE,&lNIndividu,&Noeud);
 
-	//Calcul de la moyenne........
-	for(int Niveau=0;Niveau<LongEcart;Niveau++)
-		pdMoyenne[Niveau]/=NItem;
-	
-	//Retourne la s�maphore
-	Kinship4Struct::ReleaseMT();
-	return 0;
- 			} catch(std::exception &ex) {
- 				forward_exception_to_r(ex);
- 			}
- 			  catch(...){
- 				::Rf_error("c++ exception (unknown reason)"); 
- 			} 
- 			return 0;
-}
+		//CREATION D'UN VECTEUR DE PROPOSANT
+		CIndSimul **NoeudPro=NULL;
+		LoadProposant(proposant,NProposant,&NoeudPro);
 
+		//Creation du tableau de Noeud
+		const short niveauMax = short(NiveauMax);
+		const int LongEcart		= NiveauMax-NiveauMin+1;
+		INITGESTIONMEMOIRE;
+			
+		//Initialisation de l'algorithme (valeur par niveau)
+		for(int Niveau=0;Niveau<LongEcart;Niveau++)
+			pdMoyenne[Niveau]=0.0;		
+		
+		//Initialisation des noeuds
+		for(int i=0;i<lNIndividu;i++)
+			Noeud[i].pGen=NULL;					
+		
+		
+		//Initialisation d'une structure multithread
+		BASEMT_DEBUTBOUCLE_INITMESSAGE(1) 		
+			//initialisation des donn�es Phis de la structure
+			BASEMT_MESSAGE(1).ind1=NULL;
+			BASEMT_MESSAGE(1).ind2=NULL;
+			BASEMT_MESSAGE(1).niveauMax=niveauMax;
+
+			//Indice ou placer la reponse dans le tableau de reponse
+			BASEMT_MESSAGE(1).indice1	= -1;
+			BASEMT_MESSAGE(1).indice2	= -1;	 			
+			
+			//Initialise la structure associe pour le retour de r�sultat
+			BASEMT_MESSAGE(1).ret = (double*) memalloc(NiveauMax+1,sizeof(double)); 
+			BASEMT_MESSAGE(1).elem.Initialise(niveauMax, BASEMT_MESSAGE(1).ret);
+			//Initialisation
+			for(int a=0;a<=niveauMax;a++)
+				BASEMT_MESSAGE(1).ret[a]=0.0;
+
+		BASEMT_FINBOUCLE_INITMESSAGE(1)
+
+		//Iterateur pour toute la matrice
+		const int NItem	 = ((NProposant*NProposant)-NProposant)/2;
+		const int taillematrix	 = NProposant*NProposant;
+		
+		//Barre de progression
+		//Tres important.. initialise la s�maphore
+		Kinship4Struct::InitMT();
+		CREATE_PROGRESS_BAR_MATRIX(NProposant,printprogress)
+		for(int cPro1=0;cPro1<NProposant;++cPro1)
+		{
+			for(int cPro2=cPro1;cPro2<NProposant;++cPro2)
+			{
+				/*
+				if (cPro2==cPro1)
+				{
+					for(int a=0;a<LongEcart;a++)
+						MatrixArray[(a*taillematrix)+cPro1*NProposant+cPro2]=0.5;					
+				}
+				else
+				{*/
+					//Partie 2: EBRANCHER L'ARBRE, ORGANISER LE NOEUD EN VECTEUR EN RESPECTANT PRECEDENCE
+					//Calcul de la valeur de retours
+					
+					BASEMT_DEBUT_REQUETE(1) 
+						//R�supere le r�sultat de phi
+						if (BASEMT_MESSAGE(1).indice1!=-1)
+						{
+							//Recupere le r�sultat de phideep				
+							double* retour	= BASEMT_MESSAGE(1).ret;
+							const int ind1	= BASEMT_MESSAGE(1).indice1;
+							const int ind2	= BASEMT_MESSAGE(1).indice2;
+							
+							for(int a=0;a<LongEcart;a++)
+							{
+								if (retour[a]<0.5)
+									pdMoyenne[a]+=retour[a+NiveauMin];
+								
+								MatrixArray[(a*taillematrix)+ind1*NProposant+ind2]=retour[a+NiveauMin];
+								MatrixArray[(a*taillematrix)+ind2*NProposant+ind1]=retour[a+NiveauMin];					
+							}	
+							
+							//remise � zero de phi deep
+							for(int a=0;a<=niveauMax;a++)
+								retour[a]=0.0;
+						}
+						//Parametre pour un nouveau calcul de phi
+						BASEMT_MESSAGE(1).indice1 = cPro1;
+						BASEMT_MESSAGE(1).indice2 = cPro2;
+						BASEMT_MESSAGE(1).ind1=NoeudPro[cPro1];
+						BASEMT_MESSAGE(1).ind2=NoeudPro[cPro2];						
+					BASEMT_FIN_REQUETE(1)
+
+					//Affichage des progress
+					INCREMENT_PROGRESS_BAR()
+				//}			
+
+			}//Fin it�rateur proposant 2
+			
+		}//Fin it�rateur proposant 1	
+
+		//Fermeture des threads
+		BASEMT_DEBUT_FERMETURE(1)
+			//RECUPERE LES DERNIERS RESULTATS DE PHI S'IL SONT VALIDE
+			if (BASEMT_MESSAGE(1).indice1!=-1)
+			{
+				//Recupere le r�sultat de phideep				
+				double* retour	= BASEMT_MESSAGE(1).ret;
+				const int ind1	= BASEMT_MESSAGE(1).indice1;
+				const int ind2	= BASEMT_MESSAGE(1).indice2;
+				
+				for(int a=0;a<LongEcart;a++)
+				{
+					if (retour[a]<0.5)
+						pdMoyenne[a]+=retour[a+NiveauMin];
+					
+					MatrixArray[(a*taillematrix)+ind1*NProposant+ind2]=retour[a+NiveauMin];
+					MatrixArray[(a*taillematrix)+ind2*NProposant+ind1]=retour[a+NiveauMin];					
+				}	
+				
+				//remise � zero de phi deep
+				for(int a=0;a<=niveauMax;a++)
+					retour[a]=0.0;
+			}
+		BASEMT_FIN_FERMETURE(1)
+
+		//Calcul de la moyenne........
+		for(int Niveau=0;Niveau<LongEcart;Niveau++)
+			pdMoyenne[Niveau]/=NItem;
+		
+		//Retourne la s�maphore
+		Kinship4Struct::ReleaseMT();
+		return 0;
+				} catch(std::exception &ex) {
+					forward_exception_to_r(ex);
+				}
+				catch(...){
+					::Rf_error("c++ exception (unknown reason)"); 
+				} 
+				return 0;
+	}
+#endif
 //**********************************************************************************/
 //
 //					FONCTION RECURSIVE POUR LE KINSHIP
@@ -436,11 +440,11 @@ int PhisMT(int* Genealogie, int* proposant, int NProposant,int NiveauMin,int Niv
 double FASTCALL Kinship(CIndSimul* Ind1,CIndSimul* Ind2,short ttl1,short ttl2)
 {
 //#define testtrace  
- #ifdef testtrace
-    static int deep=0;
-    static int profondeur=0;
-    static int tableau[22]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-  #endif
+//  #ifdef testtrace
+//     static int deep=0;
+//     static int profondeur=0;
+//     static int tableau[22]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+//   #endif
 
 	if (Ind1==Ind2)
 	{				
@@ -465,22 +469,22 @@ double FASTCALL Kinship(CIndSimul* Ind1,CIndSimul* Ind2,short ttl1,short ttl2)
 			}
 			else
 				val=0;
-#ifdef testtrace
-    if (deep==0)
-    {
-        //printf("\nPISTE= ");
-        //for(int a=0;a<profondeur;a++)
-	       //printf("%d, ",tableau[a]);	
-	//printf(" === prof=%d  ->  COSAN=%f  --> VALEUR= %f \n",profondeur+1, val, pow2(profondeur+1)*(1+val) );
-    }
-#endif
+// #ifdef testtrace
+//     if (deep==0)
+//     {
+//         //printf("\nPISTE= ");
+//         //for(int a=0;a<profondeur;a++)
+// 	       //printf("%d, ",tableau[a]);	
+// 	//printf(" === prof=%d  ->  COSAN=%f  --> VALEUR= %f \n",profondeur+1, val, pow2(profondeur+1)*(1+val) );
+//     }
+// #endif
 		}			
 		return (1+val)*0.5;
 	}
 		
-#ifdef testtrace
-    if (deep==0) tableau[profondeur]=Ind1->nom;
-#endif
+// #ifdef testtrace
+//     if (deep==0) tableau[profondeur]=Ind1->nom;
+// #endif
 
 	//Trie improvis�: Toujours le plus bas de la h�rarchie en premiers
 	if (Ind2->noind > Ind1->noind)
