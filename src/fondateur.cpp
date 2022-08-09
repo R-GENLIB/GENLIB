@@ -40,7 +40,7 @@ Calcul et Analyse de diverse valeur d�riv� du gene fondateur
 #include <Rcpp/Function.h>
 #include <unordered_map>
 
-#include "asa239.hpp"
+#include "asa239.h"
 
 #ifdef NEG
 	#undef NEG
@@ -419,9 +419,6 @@ void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncet
 	int nbRecomb1 =0;
 	int nbRecomb2 =0;
 	
-	Rcpp::Rcout << probRecomb[0] << " " << Morgan_Len[0] << "\n";
-	Rcpp::Rcout << probRecomb[1] << " " << Morgan_Len[1] << "\n";
-	Rcpp::Rcout << write_all_node << "\n";
 	std::uniform_real_distribution<> u_dist(0, 1);
 
 	//create output files
@@ -431,7 +428,6 @@ void simulhaplo(int* Genealogie, int* plProposant, int lNProposant, int* plAncet
 	outHaplo 	<< lSimul << ";" << lNProposant << "\n";
 
 	if(write_all_node == 1){
-		Rcpp::Rcout << "check";
 		std::string	stroutAllHaplo = WD + "/All_nodes_haplotypes.txt";
 		std::ofstream outAllHaplo(stroutAllHaplo);
 		outAllHaplo << lSimul << ";" << lNProposant << ";" << NOrdre << "\n";

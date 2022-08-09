@@ -213,6 +213,14 @@ int Phis(int* Genealogie, int* proposant, int NProposant,int NiveauMin,int Nivea
 //will replace eventually with std library threads
 
 #ifdef __APPLE__
+	int PhisMT(int* Genealogie, int* proposant, int NProposant,int NiveauMin,int NiveauMax,
+		double* pdMoyenne, double *MatrixArray,int printprogress){
+		
+		Phis(Genealogie, proposant, NProposant, NiveauMin,NiveauMax, pdMoyenne, MatrixArray, printprogress);
+
+		return 0;
+		}
+#else
 	// ********************************************************************
 	//
 	//			PUBLIC :VERSION MT 
@@ -413,6 +421,7 @@ int Phis(int* Genealogie, int* proposant, int NProposant,int NiveauMin,int Nivea
 				return 0;
 	}
 #endif
+
 //**********************************************************************************/
 //
 //					FONCTION RECURSIVE POUR LE KINSHIP
@@ -548,9 +557,6 @@ CSema  Kinship4Struct::m_acces;
 
 Kinship4Struct::Kinship4Struct() {m_acces=NULL;}
 Kinship4Struct::Kinship4Struct(short NiveauMax, double* Resultat) {m_acces=NULL;Initialise(NiveauMax,Resultat);}
-
-void Kinship4Struct::InitMT() {CSema_init(m_acces,1);}
-void Kinship4Struct::ReleaseMT() {CSema_destroy(m_acces);}
 
 void Kinship4Struct::Initialise(short NiveauMax, double* Resultat) 
 {
@@ -691,6 +697,9 @@ void FASTCALL Kinship4(CIndSimul* Ind1, CIndSimul* Ind2, short ttl1, short ttl2,
 	return;
 }
 
+#ifndef __APPLE__
+void Kinship4Struct::InitMT() {CSema_init(m_acces,1);}
+void Kinship4Struct::ReleaseMT() {CSema_destroy(m_acces);}
 void FASTCALL Kinship4MT(CIndSimul* Ind1, CIndSimul* Ind2, short ttl1, short ttl2,Kinship4Struct &T)
 {	
 	//REQUIS ET PREALABLEE
@@ -791,3 +800,4 @@ void FASTCALL Kinship4MT(CIndSimul* Ind1, CIndSimul* Ind2, short ttl1, short ttl
 	}
 	return;
 }
+#endif

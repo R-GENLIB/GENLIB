@@ -126,11 +126,10 @@ gen.simuHaplo = function (gen, pro=NULL, ancestors=NULL, simulNo = 1, model =1, 
 	# 	stop("If reconstruction is set to 1, you must provide a hap file and map file")		
 
 	if(seed==0)
-		seed=abs(.Random.seed[5]) 
+		seed=as.integer(Sys.time())
 	
-
 	if(is.null(physical_map_Fa) & is.null(physical_map_Mo)){
-		message("No map function specified to convert genetic distance to physical. Assumed linear along length of chromosome")
+		message("No map function specified to convert genetic distance to physical. Assumed constant along length of chromosome")
 		convert = 0
 		bp_map_FA = 0
 		cm_map_FA = 0
@@ -159,16 +158,16 @@ gen.simuHaplo = function (gen, pro=NULL, ancestors=NULL, simulNo = 1, model =1, 
 			stop("last element of BP and cM columns should be BP_len, and cM_len, respectively")
 	}
 	
-	message("seed: ", seed,"\n")
-	print(as.integer(all_nodes))
+	message("seed: ", seed)
+
 	.Call("SPLUSSimulHaplo", gen@.Data, pro, length(pro), ancestors, length(ancestors), as.integer(simulNo), model_params, cM_len/100, as.integer(model), 
 			as.integer(convert), as.integer(BP_len), as.integer(bp_map_FA), cm_map_FA, as.integer(bp_map_MO), cm_map_MO, 
 			outDir, as.integer(all_nodes), as.integer(seed), package="GENLIB")
 
 	if(all_nodes == 0)
-		message("output files: ", outDir, "/Proband_Haplotypes.txt \n")
+		message("output file:\n", outDir, "/Proband_Haplotypes.txt\n")
 	else
-		message("output files: ", outDir, "/All_nodes_haplotypes.txt \n", outDir, "/Proband_Haplotypes.txt \n")
+		message("output files:\n", outDir, "/All_nodes_haplotypes.txt\n", outDir, "/Proband_Haplotypes.txt\n")
 
 }
 

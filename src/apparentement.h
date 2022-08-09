@@ -54,10 +54,11 @@ int PhisMT(int* Genealogie, int* proposant, int NProposant,int NiveauMin,int Niv
 
 double FASTCALL Kinship(CIndSimul* Ind1,CIndSimul* Ind2,short ttl1,short ttl2);
 void FASTCALL Kinship4(CIndSimul* Ind1, CIndSimul* Ind2, short ttl1, short ttl2,Kinship4Struct &T);
-void FASTCALL Kinship4MT(CIndSimul* Ind1, CIndSimul* Ind2, short ttl1, short ttl2,Kinship4Struct &T);
-		
+
+#ifndef __APPLE__
+	void FASTCALL Kinship4MT(CIndSimul* Ind1, CIndSimul* Ind2, short ttl1, short ttl2,Kinship4Struct &T);
 #endif
 
-
+#endif
 
 
