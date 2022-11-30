@@ -27,7 +27,7 @@
 }
 
 \value{
-Will generate output files "Proband_Haplotypes.txt" and "All_nodes_haplotypes.txt" in the specified output directory. If Reconstruction = 1 will also generate "reconstructed_haplotypes.txt"
+Will generate output files "Proband_Haplotypes.txt" and "All_nodes_haplotypes.txt" in the specified output directory.
 }
 \seealso{
 \code{\link{gen.genealogy}}
@@ -37,15 +37,19 @@ Will generate output files "Proband_Haplotypes.txt" and "All_nodes_haplotypes.tx
 }
 \examples{
 
-#load the genealogy table
-data(genea140)
+gen_table <- data.frame(ind=c(1,2,3,4,5,6,7),
+                        mother=c(0,0,2,0,0,5,3),
+                        father=c(0,0,1,0,0,4,6),
+                        sex=c(1,2,2,1,2,1,1)
+)
 
 #convert the genealogy table into a GENLIB object
-sample_gen<-gen.genealogy(genea140, autoComplete = TRUE) 
+sample_gen<-gen.genealogy(gen_table) 
 
+gen.graph(sample_gen)
 # Simulate the gene dropping from founders to probamds
 
-gen.simuHaplo(sample_gen, simulNo=1, model = 1, model_params = c(1,1), cM_len=c(100,100),
+gen.simuHaplo(sample_gen, simulNo=5, model = 1, model_params = c(1,1), cM_len=c(100,100),
                 BP_len = 100000000, outDir=tempdir())
 
 f<-file(paste(tempdir(),"Proband_Haplotypes.txt",sep="/"),"r")
