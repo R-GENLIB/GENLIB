@@ -1097,15 +1097,16 @@ void recombine(haplotype* hapBegin, haplotype* hapEnd, haplotype* hapChild, int 
 //functions to analyze the output of simulhaplo
 
 int tb_digest_line(const std::string& chr_string, const int& myAnc, int& numHits, std::vector<int> &target_pos_L, std::vector<int> &target_pos_R){
-    std::string          temp_string;                
-    std::stringstream    ss(chr_string);
-
-    int lastpos = 0, counter = 0;
+	int lastpos = 0, counter = 1;
     bool push_back = false;
 
-    while(std::getline(ss, temp_string, ';')) {
+	std::size_t tokenPos, tokenPos1;
+	tokenPos = chr_string.find(';');
+
+    while(tokenPos != std::string::npos) {
+		tokenPos1 = chr_string.find(';', tokenPos + 1);
         if (counter%2==1){
-            if (stoi(temp_string.substr(0, temp_string.size() - 2)) == myAnc){
+            if (std::stoi(chr_string.substr(tokenPos + 1, tokenPos1 - tokenPos - 1 - 2)) == myAnc){ //-2 because the segmentIDs for now have trailing ".1" or ".2" to encode the chromosome copy
                 push_back = true;
                 numHits ++;
             }
@@ -1113,29 +1114,29 @@ int tb_digest_line(const std::string& chr_string, const int& myAnc, int& numHits
         else{
             if (push_back){
                 target_pos_L.push_back(lastpos);
-                target_pos_R.push_back(stoi(temp_string));
+                target_pos_R.push_back(std::stoi(chr_string.substr(tokenPos + 1, tokenPos1 - tokenPos - 1)));
                 push_back = false;
             }
-            lastpos = stoi(temp_string);
+            lastpos = std::stoi(chr_string.substr(tokenPos + 1, tokenPos1 - tokenPos - 1));
         }
         counter++;
+		tokenPos = tokenPos1;
     }
     return 0;
 };
 
 int tb_digest_line2(const std::string& recomb_string, int& pHap, int& nRecomb, int* RecPos){
     size_t c_tokenPos  = recomb_string.find(',');
-    nRecomb = std::stoi(recomb_string.substr(0,c_tokenPos-1)); 
+    nRecomb = std::stoi(recomb_string.substr(0, c_tokenPos)); 
 
     size_t c_tokenPos1 = recomb_string.find(',', c_tokenPos+1);
-    pHap = (0.5 < std::stof(recomb_string.substr(c_tokenPos+1, c_tokenPos1 - c_tokenPos - 1)));
-    //if less than 0.5 return 0 : chromosome starts with father
-    //if greater than 0.5 return 1 : chromosome starts with mother
+    pHap = (std::stoi(recomb_string.substr(c_tokenPos+1, c_tokenPos1 - c_tokenPos - 1)));
+
     
     for (int k=0; k < nRecomb; k++) {
         c_tokenPos = recomb_string.find(',', c_tokenPos1 + 1);
         RecPos[k]  = std::stoi(recomb_string.substr(c_tokenPos1 + 1, c_tokenPos-c_tokenPos1-1));
-        c_tokenPos1 = recomb_string.find(',', c_tokenPos+1);
+        c_tokenPos1 = c_tokenPos;
     }
     return 0;
 };
@@ -1154,10 +1155,9 @@ struct tb_ind{
 };
 
 int traceback_internal(tb_ind* curr_ind, int curr_chr, const int& myAnc, const int& Lpos, const int& Rpos, int* tb_path, int& pathlen){
-
 //    tb_hap*  curr_hap  = &(curr_ind->chr[curr_chr]); //loop through the tb_ind tree, curr_hap = current haplotype, curr_ind = current individual
     tb_ind*  next_ind  = curr_ind->parents[curr_chr];
-
+	
     bool keep_looping = true;
     int counter = 0;
     
@@ -1165,7 +1165,7 @@ int traceback_internal(tb_ind* curr_ind, int curr_chr, const int& myAnc, const i
         tb_path[counter] = next_ind->ID;
         counter++;
   
-        int count_recomb = 0; //count the number of recombinations that occur before the ancestral segment (to see which parent its from)
+        int count_recomb = 0; //count the number of recombinations that occur before the ancestral segment (to see which parent its from
 
         if(curr_ind->chr[curr_chr].nRec ==0){
             curr_chr = curr_ind->chr[curr_chr].pHap;
@@ -1175,6 +1175,7 @@ int traceback_internal(tb_ind* curr_ind, int curr_chr, const int& myAnc, const i
         }
         else{
             for(int k=0; k<(curr_ind->chr[curr_chr].nRec); k++){
+
                 if(curr_ind->chr[curr_chr].RecPos[k] <= Lpos) count_recomb++;
                 else if((curr_ind->chr[curr_chr].RecPos[k] > Lpos) & (curr_ind->chr[curr_chr].RecPos[k] < Rpos)){
                     return -9;
@@ -1197,63 +1198,54 @@ int traceback_internal(tb_ind* curr_ind, int curr_chr, const int& myAnc, const i
             return -10;
             //throw exception
         }
+	pathlen = counter;
     }
 	return 0;
 }
 
 int simulhaplo_traceback(std::string& path_ANH, std::string& path_PH, int& myPro, int& myAnc, std::vector<int>& indVec, std::vector<int>& mereVec, std::vector<int>& pereVec) {
-	Rcpp::Rcout << "check1";
+	try{
+
     typedef std::unordered_map<int, std::unique_ptr<tb_ind>> tb_dict;
     tb_dict my_tb_dict;
 
     std::ifstream file_pro_haplo (path_PH);
     std::ifstream file_all_haplo (path_ANH);
 
-	Rcpp::Rcout << path_PH;
     std::string line;
     std::getline(file_pro_haplo, line); //
 
     std::size_t tokenPos, tokenPos1;
     tokenPos =line.find(";");
 
-	Rcpp::Rcout << "check2\n";
-	Rcpp::Rcout << line;
-	Rcpp::Rcout << line.substr(0,tokenPos) << "\n";
-	Rcpp::Rcout << line.substr(tokenPos+1) << "\n";
     int numSim = std::stoi(line.substr(0,tokenPos));
     int numPro = std::stoi(line.substr(tokenPos+1));
-	Rcpp::Rcout << "check2.5";
 
     std::getline(file_all_haplo, line);
-	Rcpp::Rcout << "check3";
     tokenPos = line.find(';');
     int numSim2 = std::stoi(line.substr(0,tokenPos));
 	tokenPos1 = line.find(';', tokenPos + 1);
     int numInd  = std::stoi(line.substr(tokenPos1+1));
 
-	Rcpp::Rcout << "check4\n";
     //MAKE tb_dict
-	
     for (const int& ind : indVec){
-        Rcpp::Rcout << ind << "\n";
-		my_tb_dict.emplace(ind, std::unique_ptr<tb_ind>(new tb_ind())); //for every ind in ind vec initialize a dict entry
-    }
+		tb_ind* tb_ind_ptr = new tb_ind();
+		tb_ind_ptr->ID = ind;
+		my_tb_dict.emplace(ind, std::unique_ptr<tb_ind>(tb_ind_ptr)); //for every ind in ind vec initialize a dict entry
+	}
 
-	Rcpp::Rcout << "check5";
+	my_tb_dict.emplace(0, std::unique_ptr<tb_ind> (new tb_ind()));
     for (std::size_t i = 0, max = indVec.size(); i < max; i++){ //go through second time now to assign parents (who were assigned in first loop)
-        Rcpp::Rcout << indVec.at(i) << "\n";
-		Rcpp::Rcout << (my_tb_dict.at(indVec.at(i))).get() << "\n";
-		Rcpp::Rcout << (my_tb_dict.at(pereVec.at(i))).get() << "\n";
 		my_tb_dict.at(indVec.at(i))->parents[0] = my_tb_dict.at(pereVec.at(i)).get();
         my_tb_dict.at(indVec.at(i))->parents[1] = my_tb_dict.at(mereVec.at(i)).get();
-    }
 
-    // std::vector<std::vector<int>> unique_paths;
-    // unique_paths.reserve(20);
+	}
+
+    std::vector<std::vector<int>> unique_paths;
+    unique_paths.reserve(30);
+
     std::string chr_string;
-	Rcpp::Rcout << "check4";
     for(int j=0; j<numSim; j++){
-		
         //
         int c1_numHits =0, c2_numHits = 0;
         std::vector<int> c1_target_pos_L, c2_target_pos_L, c1_target_pos_R, c2_target_pos_R;
@@ -1267,15 +1259,14 @@ int simulhaplo_traceback(std::string& path_ANH, std::string& path_PH, int& myPro
             tokenPos1 = line.find(';', tokenPos+1); 
 
             // what if they want to trace back from an internal node not a proband? can add it in later...
-            ProID = std::stoi(line.substr(tokenPos+1, tokenPos1));
 
+            ProID = std::stoi(line.substr(tokenPos+1, tokenPos1 - tokenPos - 1));
             if(ProID == myPro){
                 tokenPos    = line.find('}');
                 tokenPos1   = line.find('}', tokenPos + 1);
                 chr_string  = line.substr(tokenPos+2, tokenPos1-tokenPos-2);
                 //tb_digest_line will push back the position vectors, and modify numHits,
                 tb_digest_line(chr_string, myAnc, c1_numHits, c1_target_pos_L, c1_target_pos_R);
-
                 tokenPos    = line.find('}', tokenPos1 + 1);
                 chr_string  = line.substr(tokenPos1+2, tokenPos-tokenPos1-2);
                 tb_digest_line(chr_string, myAnc, c2_numHits, c2_target_pos_L, c2_target_pos_R);
@@ -1284,7 +1275,6 @@ int simulhaplo_traceback(std::string& path_ANH, std::string& path_PH, int& myPro
         if (c1_numHits + c2_numHits == 0){//IF the proband doesn't have a segment from the specified ancestor then waste the next nInd lines of all_nodes
             for (int i=0; i<numInd; i++) file_all_haplo.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
-
         else{
             int indID; //Read the All_nodes_haplo file and fill tb_dict
             for (int i=0; i<numInd; i++){
@@ -1292,19 +1282,14 @@ int simulhaplo_traceback(std::string& path_ANH, std::string& path_PH, int& myPro
 
                 tokenPos  = line.find(';');
                 tokenPos1 = line.find(';', tokenPos + 1);
-                //get ProID
-                indID = std::stoi(line.substr(tokenPos1+1, tokenPos-tokenPos1-1));
-                tb_ind* node = my_tb_dict.at(indID).get();
 
-                // this is tb_ind unique pointer:  my_tb_dict.at(ProID)
-                // tb_ind has pointers to parents (already initialized), and array of 2 tb_hap
-                // the tb_hap struct values need to be set : pHap, nRec, RecPos
+                indID = std::stoi(line.substr(tokenPos+1, tokenPos1-tokenPos-1));
+                tb_ind* node = my_tb_dict.at(indID).get();
 
                 tokenPos   = line.find(';', tokenPos1 + 1);
                 chr_string = line.substr(tokenPos1+1, tokenPos-tokenPos1-1);
                 tb_digest_line2(chr_string, node->chr[0].pHap, node->chr[0].nRec, node->chr[0].RecPos);
 
-                tokenPos1  = line.find(';', tokenPos + 1);
                 chr_string = line.substr(tokenPos + 1, tokenPos1-tokenPos - 1);
                 tb_digest_line2(chr_string, node->chr[1].pHap, node->chr[1].nRec, node->chr[1].RecPos);
             };
@@ -1317,10 +1302,10 @@ int simulhaplo_traceback(std::string& path_ANH, std::string& path_PH, int& myPro
                 tb_ind* curr_ind  = my_tb_dict.at(myPro).get();
                 curr_chr  = 0;
 
-                traceback_internal(curr_ind, curr_chr, Lpos, Rpos, myAnc, tb_path, pathlen);
+            	traceback_internal(curr_ind, curr_chr, myAnc, Lpos, Rpos, tb_path, pathlen);
 
-				Rcpp::Rcout << "segment: chr1 " << Lpos << "->" << Rpos << "\npath: ";
 				for(int h=0; h<pathlen; h++) Rcpp::Rcout << tb_path[h] << " ";
+				Rcpp::Rcout << "\n";
                 // for(std::vector<int>& path_vec : unique_paths){
 
                 // }
@@ -1341,14 +1326,20 @@ int simulhaplo_traceback(std::string& path_ANH, std::string& path_PH, int& myPro
                 tb_ind* curr_ind  = my_tb_dict.at(myPro).get();
                 curr_chr  = 1;
  
-                traceback_internal(curr_ind, curr_chr, Lpos, Rpos, myAnc, tb_path, pathlen);
+                traceback_internal(curr_ind, curr_chr, myAnc, Lpos, Rpos, tb_path, pathlen);
 
-				Rcpp::Rcout << "segment: chr1 " << Lpos << "->" << Rpos << "\npath: ";
+				Rcpp::Rcout << "simulation " << j + 1 << "\nchr2 segment:" << Lpos << "->" << Rpos << "\npathlen: " << pathlen << "\npath: ";
 				for(int h=0; h<pathlen; h++) Rcpp::Rcout << tb_path[h] << " ";
+				Rcpp::Rcout << "\n";
             }
         }
     }
 	return 0;
+	} catch(std::exception &ex) {
+ 	forward_exception_to_r(ex);
+ 	} catch(...){
+ 	::Rf_error("c++ exception (unknown reason)"); 
+ 	} return 0;
 }
 
 /*! 

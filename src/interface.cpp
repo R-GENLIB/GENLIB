@@ -638,6 +638,7 @@ RcppExport SEXP SPLUSSimulHaplo(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, S
 }
 
 RcppExport SEXP SPLUSSimulHaplo_traceback(SEXP s_proID, SEXP s_ancestorID, SEXP s_indVec, SEXP s_fatherVec, SEXP s_motherVec, SEXP s_path_ANH, SEXP s_path_PH){
+
 	std::string path_ANH = Rcpp::as<std::string>(s_path_ANH);
 	std::string path_PH  = Rcpp::as<std::string>(s_path_PH);
 
@@ -654,7 +655,6 @@ RcppExport SEXP SPLUSSimulHaplo_traceback(SEXP s_proID, SEXP s_ancestorID, SEXP 
 
 	//resultvec1 = std::vector<int> ... (make empty vectors for the results, then pass them into traceback function by reference, then copy them to R
 	//resultvec2 ...
-	Rcpp::Rcout << "check";
 	simulhaplo_traceback(path_ANH, path_PH, proID, ancID, indVec, motherVec, fatherVec); //resultvec1, resultvec2....
 
 	//after traceback function is done, return a constructed dataframe
@@ -666,6 +666,7 @@ RcppExport SEXP SPLUSSimulHaplo_traceback(SEXP s_proID, SEXP s_ancestorID, SEXP 
 	// return(results)
 
 	return R_NilValue;
+
 }
 /*FONCTION D'INTERFACE POUR SPLUS*/
 
