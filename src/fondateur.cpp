@@ -1290,6 +1290,7 @@ int simulhaplo_traceback(std::string& path_ANH, std::string& path_PH, int& myPro
                 chr_string = line.substr(tokenPos1+1, tokenPos-tokenPos1-1);
                 tb_digest_line2(chr_string, node->chr[0].pHap, node->chr[0].nRec, node->chr[0].RecPos);
 
+                tokenPos1  = line.find('}', tokenPos + 1);
                 chr_string = line.substr(tokenPos + 1, tokenPos1-tokenPos - 1);
                 tb_digest_line2(chr_string, node->chr[1].pHap, node->chr[1].nRec, node->chr[1].RecPos);
             };
@@ -1304,6 +1305,7 @@ int simulhaplo_traceback(std::string& path_ANH, std::string& path_PH, int& myPro
 
             	traceback_internal(curr_ind, curr_chr, myAnc, Lpos, Rpos, tb_path, pathlen);
 
+				Rcpp::Rcout  << "simulation: " << j + 1 << "\nchr1 segment: " << Lpos << "->" << Rpos << "\npathlen: " << pathlen << "\npath: ";
 				for(int h=0; h<pathlen; h++) Rcpp::Rcout << tb_path[h] << " ";
 				Rcpp::Rcout << "\n";
                 // for(std::vector<int>& path_vec : unique_paths){
