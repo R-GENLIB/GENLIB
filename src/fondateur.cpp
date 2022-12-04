@@ -1105,7 +1105,7 @@ int tb_digest_line(const std::string& chr_string, const int& myAnc, int& numHits
 
     while(tokenPos != std::string::npos) {
 		tokenPos1 = chr_string.find(';', tokenPos + 1);
-        if (counter%2==1){
+        if (counter%2==1){ 
             if (std::stoi(chr_string.substr(tokenPos + 1, tokenPos1 - tokenPos - 1 - 2)) == myAnc){ //-2 because the segmentIDs for now have trailing ".1" or ".2" to encode the chromosome copy
                 push_back = true;
                 numHits ++;
@@ -1154,14 +1154,15 @@ struct tb_ind{
     tb_hap chr[2];
 };
 
-int traceback_internal(tb_ind* curr_ind, int curr_chr, const int& myAnc, const int& Lpos, const int& Rpos, int* tb_path, int& pathlen){
+int traceback_internal(std::ofstream& log, tb_ind* curr_ind, int curr_chr, const int& myAnc, const int& Lpos, const int& Rpos, int* tb_path, int& pathlen){
 //    tb_hap*  curr_hap  = &(curr_ind->chr[curr_chr]); //loop through the tb_ind tree, curr_hap = current haplotype, curr_ind = current individual
     tb_ind*  next_ind  = curr_ind->parents[curr_chr];
 	
     bool keep_looping = true;
     int counter = 0;
-    
+    log << "Lpos: " << Lpos << " Rpos: " << Rpos << "\n" << std::flush;
     while(keep_looping){
+		log << curr_ind->ID << " " << curr_ind->chr[curr_chr].pHap << " " << curr_ind->chr[curr_chr].nRec << "\n"  << std::flush;
         tb_path[counter] = next_ind->ID;
         counter++;
   
@@ -1175,12 +1176,14 @@ int traceback_internal(tb_ind* curr_ind, int curr_chr, const int& myAnc, const i
         }
         else{
             for(int k=0; k<(curr_ind->chr[curr_chr].nRec); k++){
-
+				log << curr_ind->chr[curr_chr].RecPos[k] << " " << std::flush;
                 if(curr_ind->chr[curr_chr].RecPos[k] <= Lpos) count_recomb++;
                 else if((curr_ind->chr[curr_chr].RecPos[k] > Lpos) & (curr_ind->chr[curr_chr].RecPos[k] < Rpos)){
+					pathlen = counter;
                     return -9;
                 }
             }
+			log << "\n" << count_recomb << "\n" << std::flush;
             if (count_recomb%2 == 1){
                 curr_chr = curr_ind->chr[curr_chr].pHap;
                 curr_chr = 1 - curr_chr; //if there is odd # of recombinations before our segment it comes from the other parent (not the start of the chromosome)
@@ -1193,7 +1196,12 @@ int traceback_internal(tb_ind* curr_ind, int curr_chr, const int& myAnc, const i
                 next_ind = curr_ind->parents[curr_chr];
             }
         }
-        if (next_ind->ID == myAnc) keep_looping = false;
+
+        if (next_ind->ID == myAnc) {
+			keep_looping = false;
+			tb_path[counter] = myAnc;
+			++counter;
+		}
         if (counter>100) {
             return -10;
             //throw exception
@@ -1203,9 +1211,20 @@ int traceback_internal(tb_ind* curr_ind, int curr_chr, const int& myAnc, const i
 	return 0;
 }
 
-int simulhaplo_traceback(std::string& path_ANH, std::string& path_PH, int& myPro, int& myAnc, std::vector<int>& indVec, std::vector<int>& mereVec, std::vector<int>& pereVec) {
-	try{
 
+inline bool check_duplicate_path(std::vector<int> pathvec, int& new_pathlen, int* new_path){
+	for (int i=0; i < new_pathlen; ++i ){
+		if (pathvec.at(i) != new_path[i]) return false;
+	}
+	return true;
+}
+
+int simulhaplo_traceback(std::string& path_ANH, std::string& path_PH, int& myPro, int& myAnc, 
+					std::vector<int>& indVec, std::vector<int>& mereVec, std::vector<int>& pereVec,
+					std::vector<int>& resultvec1, std::vector<int>& resultvec2, std::vector<int>& resultvec3) 
+{
+	try{
+	std::ofstream log("log.txt");
     typedef std::unordered_map<int, std::unique_ptr<tb_ind>> tb_dict;
     tb_dict my_tb_dict;
 
@@ -1238,7 +1257,6 @@ int simulhaplo_traceback(std::string& path_ANH, std::string& path_PH, int& myPro
     for (std::size_t i = 0, max = indVec.size(); i < max; i++){ //go through second time now to assign parents (who were assigned in first loop)
 		my_tb_dict.at(indVec.at(i))->parents[0] = my_tb_dict.at(pereVec.at(i)).get();
         my_tb_dict.at(indVec.at(i))->parents[1] = my_tb_dict.at(mereVec.at(i)).get();
-
 	}
 
     std::vector<std::vector<int>> unique_paths;
@@ -1247,6 +1265,7 @@ int simulhaplo_traceback(std::string& path_ANH, std::string& path_PH, int& myPro
     std::string chr_string;
     for(int j=0; j<numSim; j++){
         //
+		log << "sim: " << j << "\n" << std::flush;
         int c1_numHits =0, c2_numHits = 0;
         std::vector<int> c1_target_pos_L, c2_target_pos_L, c1_target_pos_R, c2_target_pos_R;
 
@@ -1279,37 +1298,64 @@ int simulhaplo_traceback(std::string& path_ANH, std::string& path_PH, int& myPro
             int indID; //Read the All_nodes_haplo file and fill tb_dict
             for (int i=0; i<numInd; i++){
                 std::getline(file_all_haplo, line);
-
+				log << line << "\n" << std::flush;
                 tokenPos  = line.find(';');
                 tokenPos1 = line.find(';', tokenPos + 1);
-
+				log << line.substr(tokenPos+1, tokenPos1-tokenPos-1) << "\n" << std::flush;
                 indID = std::stoi(line.substr(tokenPos+1, tokenPos1-tokenPos-1));
                 tb_ind* node = my_tb_dict.at(indID).get();
 
                 tokenPos   = line.find(';', tokenPos1 + 1);
-                chr_string = line.substr(tokenPos1+1, tokenPos-tokenPos1-1);
+                chr_string = line.substr(tokenPos1+1, tokenPos - tokenPos1-1);
+				log << chr_string << "\n" << std::flush;
                 tb_digest_line2(chr_string, node->chr[0].pHap, node->chr[0].nRec, node->chr[0].RecPos);
+				log << indID << " " << node->chr[0].nRec << " " << node->chr[0].pHap << "\n" << std::flush;
 
                 tokenPos1  = line.find('}', tokenPos + 1);
-                chr_string = line.substr(tokenPos + 1, tokenPos1-tokenPos - 1);
+                chr_string = line.substr(tokenPos + 1, tokenPos1 - tokenPos - 1);
+				log << chr_string << "\n" << std::flush;
                 tb_digest_line2(chr_string, node->chr[1].pHap, node->chr[1].nRec, node->chr[1].RecPos);
+				log << indID << " " << node->chr[1].nRec << " " << node->chr[1].pHap << "\n" << std::flush;
+
             };
             //now the tb_dict is initialized, with the recomb history, need to do the traceback         
-                
+            log << "c1 hits: " << c1_numHits << "\n" << std::flush;
+            log << "c2 hits: " << c2_numHits << "\n" << std::flush;
+
             for(int i=0; i<c1_numHits; i++){
+				resultvec1.push_back(j+1);
                 Lpos = c1_target_pos_L[i];
                 Rpos = c1_target_pos_R[i];
-
+				resultvec2.push_back(Rpos-Lpos);
                 tb_ind* curr_ind  = my_tb_dict.at(myPro).get();
                 curr_chr  = 0;
 
-            	traceback_internal(curr_ind, curr_chr, myAnc, Lpos, Rpos, tb_path, pathlen);
+				log << "traceback internal\n" << std::flush;
+            	traceback_internal(log, curr_ind, curr_chr, myAnc, Lpos, Rpos, tb_path, pathlen);
+				log << "traceaback internal done\n" << std::flush;
 
-				Rcpp::Rcout  << "simulation: " << j + 1 << "\nchr1 segment: " << Lpos << "->" << Rpos << "\npathlen: " << pathlen << "\npath: ";
-				for(int h=0; h<pathlen; h++) Rcpp::Rcout << tb_path[h] << " ";
-				Rcpp::Rcout << "\n";
-                // for(std::vector<int>& path_vec : unique_paths){
+				// Rcpp::Rcout  << "simulation: " << j + 1 << "\nchr1 segment: " << Lpos << "->" << Rpos << "\npathlen: " << pathlen << "\npath: ";
+				// for(int h=0; h<pathlen; h++) Rcpp::Rcout << tb_path[h] << " ";
+				// Rcpp::Rcout << "\n";
+				
+				bool duplicate_path = false;
+				int path_count = 0;
+				std::size_t veclen;
 
+                for(std::vector<int>& pathvec : unique_paths ){
+					++path_count;
+					veclen = pathvec.size();
+					log << "check duplicate path\n" <<std::flush;
+					if (veclen == (std::size_t)pathlen) duplicate_path = check_duplicate_path(pathvec, pathlen, tb_path);
+					log << "check duplicate done\n" <<std::flush;
+					if (duplicate_path)    break;
+					
+				}
+
+				if (!duplicate_path) {
+					resultvec3.push_back(path_count + 1);
+					unique_paths.emplace_back(std::vector<int> (tb_path, tb_path + pathlen));
+				} else resultvec3.push_back(path_count);
                 // }
                 //check the num_unique paths to see if it exists yet
                 //for (int h=0; h<unique_paths.size(); h++) {
@@ -1322,20 +1368,43 @@ int simulhaplo_traceback(std::string& path_ANH, std::string& path_PH, int& myPro
             }
 
             for(int i=0; i<c2_numHits; i++){
+				resultvec1.push_back(j+1);
                 Lpos = c2_target_pos_L[i];
                 Rpos = c2_target_pos_R[i];
-
+				resultvec2.push_back(Rpos-Lpos);
                 tb_ind* curr_ind  = my_tb_dict.at(myPro).get();
                 curr_chr  = 1;
  
-                traceback_internal(curr_ind, curr_chr, myAnc, Lpos, Rpos, tb_path, pathlen);
+				log << "traceback internal\n" << std::flush;
+            	traceback_internal(log, curr_ind, curr_chr, myAnc, Lpos, Rpos, tb_path, pathlen);
+				log << "traceaback internal done\n" << std::flush;
+				
+				bool duplicate_path = false;
+				int path_count = 0;
+				std::size_t veclen;
 
-				Rcpp::Rcout << "simulation " << j + 1 << "\nchr2 segment:" << Lpos << "->" << Rpos << "\npathlen: " << pathlen << "\npath: ";
-				for(int h=0; h<pathlen; h++) Rcpp::Rcout << tb_path[h] << " ";
-				Rcpp::Rcout << "\n";
-            }
+                for(std::vector<int>& pathvec : unique_paths ){
+					++path_count;
+					veclen = pathvec.size();
+					log << "check duplicate\n" << std::flush;
+					if (veclen == (std::size_t)pathlen) duplicate_path = check_duplicate_path(pathvec, pathlen, tb_path);
+					log << "check duplicate done\n" << std::flush;
+					if (duplicate_path)    break;
+				}
+
+				if (!duplicate_path) {
+					resultvec3.push_back(path_count + 1);
+					unique_paths.emplace_back(std::vector<int> (tb_path, tb_path + pathlen));
+				} else resultvec3.push_back(path_count);           
+			}
         }
     }
+
+	for (int i = 0, veclen = unique_paths.size(); i != veclen; ++i){
+		Rcpp::message << "\npath: " << i+1 << "\n";
+		for (const int& node : unique_paths.at(i)) Rcpp::message << node << " ";
+	}  
+
 	return 0;
 	} catch(std::exception &ex) {
  	forward_exception_to_r(ex);

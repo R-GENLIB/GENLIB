@@ -181,10 +181,11 @@ gen.simuHaplo_traceback = function(gen, proID, ancestorID, all_nodes_path, proba
 	fatherVec <- t$father
 	motherVec <- t$mother
 
-	message("input file paths:\n", all_nodes_path, "\n", proband_haplotypes_path)
+	message("input file paths:\n", all_nodes_path, "\n", proband_haplotypes_path, "\n")
 
-	.Call("SPLUSSimulHaplo_traceback", as.integer(proID), as.integer(ancestorID), indVec, fatherVec, motherVec, all_nodes_path, proband_haplotypes_path, package="GENLIB")
+	x = .Call("SPLUSSimulHaplo_traceback", as.integer(proID), as.integer(ancestorID), indVec, fatherVec, motherVec, all_nodes_path, proband_haplotypes_path, package="GENLIB")
 	#need to pass in the vectors that will hold the results
+	return(x)
 }
 
 gen.simuSample = function(gen, pro, ancestors, stateAncestors, simulNo = 5000)#, named = T)

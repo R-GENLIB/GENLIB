@@ -653,20 +653,28 @@ RcppExport SEXP SPLUSSimulHaplo_traceback(SEXP s_proID, SEXP s_ancestorID, SEXP 
 	std::vector<int> motherVec = Rcpp::as<std::vector<int> >(w_motherVec);
 	std::vector<int> fatherVec = Rcpp::as<std::vector<int> >(w_fatherVec);
 
+	std::vector<int> resultvec1;   //simulno
+	resultvec1.reserve(100);  
+	std::vector<int> resultvec2;  // pathno
+	resultvec2.reserve(100);
+	std::vector<int> resultvec3;  //seg length
+	resultvec3.reserve(100);
 	//resultvec1 = std::vector<int> ... (make empty vectors for the results, then pass them into traceback function by reference, then copy them to R
 	//resultvec2 ...
-	simulhaplo_traceback(path_ANH, path_PH, proID, ancID, indVec, motherVec, fatherVec); //resultvec1, resultvec2....
+	simulhaplo_traceback(path_ANH, path_PH, proID, ancID, indVec, motherVec, fatherVec, resultvec1, resultvec2, resultvec3); //resultvec1, resultvec2....
 
 	//after traceback function is done, return a constructed dataframe
-	// Rcpp::IntegerVector w_resultvec1 = Rcpp::wrap(resultvec1);
+	Rcpp::IntegerVector w_resultvec1 = Rcpp::wrap(resultvec1);
+	Rcpp::IntegerVector w_resultvec2 = Rcpp::wrap(resultvec2);
+	Rcpp::IntegerVector w_resultvec3 = Rcpp::wrap(resultvec3);
+
+	Rcpp::DataFrame results = Rcpp::DataFrame::create(
+		Rcpp::Named("simulNo") 		= w_resultvec1,
+		Rcpp::Named("pathno")  		= w_resultvec2,
+		Rcpp::Named("seg_length") 	= w_resultvec3
+	);
 	
-	//Rcpp::Dataframe results = Rcpp::DataFrame::create(
-	// 	Rcpp::Named("name") = w_resultvec1
-	// )
-	// return(results)
-
-	return R_NilValue;
-
+	return results;
 }
 /*FONCTION D'INTERFACE POUR SPLUS*/
 
