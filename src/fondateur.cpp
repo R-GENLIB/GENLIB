@@ -1401,8 +1401,8 @@ int simulhaplo_traceback(std::string& path_ANH, std::string& path_PH, int& myPro
     }
 
 	for (int i = 0, veclen = unique_paths.size(); i != veclen; ++i){
-		Rcpp::message << "\npath: " << i+1 << "\n";
-		for (const int& node : unique_paths.at(i)) Rcpp::message << node << " ";
+		Rcpp::message(Rcpp::wrap("\npath: "+std::to_string(i+1)+"\n"));
+		for (const int& node : unique_paths.at(i)) Rcpp::message(Rcpp::wrap(std::to_string(node)+" "));
 	}  
 
 	return 0;
@@ -1530,7 +1530,7 @@ inline void check_HBD(const overlaps& hx1, const overlaps& hx2, overlaps& h){
 					Lpos2 =  (Lpos1 <= Lpos2) ? Lpos1 : Lpos2; //reuse the earlier variable names, they'll get overwritten next loop
 					Rpos2 =  (Rpos1 >= Rpos2) ? Rpos1 : Rpos2;
 					
-					if check_overlaps((memory_Lpos[memory_count -1], memory_Rpos[memory_count -1], Lpos2, Rpos2)){
+					if (check_overlaps(memory_Lpos[memory_count -1], memory_Rpos[memory_count -1], Lpos2, Rpos2)){
 						memory_Lpos[memory_count -1] = (memory_Lpos[memory_count -1] <= Lpos2) ? memory_Lpos[memory_count -1] : Lpos2;
 						memory_Rpos[memory_count -1] = (memory_Rpos[memory_count -1] >= Rpos2) ? memory_Rpos[memory_count -1] : Rpos2;
 					}
@@ -1541,7 +1541,7 @@ inline void check_HBD(const overlaps& hx1, const overlaps& hx2, overlaps& h){
 					}
 				}
 			}
-		}
+		};
 		if (!any_overlap){
 			h.Lpos[count] = Lpos1;
 			h.Rpos[count] = Rpos1;
@@ -1567,7 +1567,7 @@ inline void check_HBD(const overlaps& hx1, const overlaps& hx2, overlaps& h){
 
 void simulhaplo_compare_IBD(const int& pro1_ID, const int& pro2_ID, const int& BP_len, std::string& file_path, std::vector<int>& rvec1, std::vector<int>& rvec2, std::vector<int>& rvec3, std::vector<int>& rvec4, std::vector<int>& rvec5) {
     try{
-	std::ofstream ("log.txt");
+	std::ofstream log("log.txt");
 	std::ifstream  in (file_path);
     std::string line;
     std::getline(in, line); //
@@ -1599,7 +1599,7 @@ void simulhaplo_compare_IBD(const int& pro1_ID, const int& pro2_ID, const int& B
                 tokenPos    = line.find('}');
                 tokenPos1   = line.find('}', tokenPos + 1);
                 chr_string  = line.substr(tokenPos+2, tokenPos1-tokenPos-2);
-				log << << proID << "\n" << chr_string << "\n";
+				log << ProID << "\n" << chr_string << "\n";
                 digest_line(chr_string, pro1_1);
 
                 tokenPos    = line.find('}', tokenPos1 + 1);
@@ -1611,7 +1611,7 @@ void simulhaplo_compare_IBD(const int& pro1_ID, const int& pro2_ID, const int& B
 				tokenPos    = line.find('}');
                 tokenPos1   = line.find('}', tokenPos + 1);
                 chr_string  = line.substr(tokenPos+2, tokenPos1-tokenPos-2);
-				log << proID << "\n" << chr_string << "\n";
+				log << ProID << "\n" << chr_string << "\n";
                 digest_line(chr_string, pro2_1);
 
                 tokenPos    = line.find('}', tokenPos1 + 1);
@@ -1624,29 +1624,28 @@ void simulhaplo_compare_IBD(const int& pro1_ID, const int& pro2_ID, const int& B
 		overlaps haploid_11x21, haploid_11x22, haploid_12x21, haploid_12x22;
 		seg_overlap(pro1_1, pro2_1, haploid_11x21);
 		log << 	"1x1\n";
-		for (size_t i = 0; i < haploid_11x21.num_overlaps; i++){
+		for (int i = 0; i < haploid_11x21.num_overlaps; i++){
 			log << haploid_11x21.Lpos[i] << "->" << haploid_11x21.Rpos[i] <<"   ";
 		};
 		seg_overlap(pro1_1, pro2_2, haploid_11x22);
 		log << 	"\n1x2\n";
-		for (size_t i = 0; i < haploid_11x22.num_overlaps; i++){
+		for (int i = 0; i < haploid_11x22.num_overlaps; i++){
 			log << haploid_11x22.Lpos[i] << "->" << haploid_11x22.Rpos[i]<<"   ";
 		};
 		seg_overlap(pro1_2, pro2_1, haploid_12x21);
 		log << 	"\n2x1\n";
-		for (size_t i = 0; i < haploid_12x21.num_overlaps; i++){
+		for (int i = 0; i < haploid_12x21.num_overlaps; i++){
 			log << haploid_12x21.Lpos[i] << "->" << haploid_12x21.Rpos[i]<<"   ";
 		};
 		seg_overlap(pro1_2, pro2_2, haploid_12x22);
 		log << 	"\n2x2\n";
-		for (size_t i = 0; i < haploid_11x22.num_overlaps; i++){
-			log << haploid_11x22.Lpos[i] << "->" << haploid_11x22.Rpos[i]<<"   ";
+		for (int i = 0; i < haploid_11x22.num_overlaps; i++){
+			log << haploid_12x22.Lpos[i] << "->" << haploid_12x22.Rpos[i]<<"   ";
 		};
-		log << std::flush;
-		int n_total_IBD = 0;
-		int total_len = 0;
-		int min = 0;
-		int max = 0;
+		// int n_total_IBD = 0;
+		// int total_len = 0;
+		// int min = 0;
+		// int max = 0;
 
 		//returns a dataframe with the following columns: simulNo, len_Shared_IBD, num_seg, mean_len, min_len, max_len
 		//no printing to r console just do the dataframe
@@ -1656,20 +1655,25 @@ void simulhaplo_compare_IBD(const int& pro1_ID, const int& pro2_ID, const int& B
 		check_HBD(haploid_11x21, haploid_12x21, haploid_21);
 		check_HBD(haploid_12x22, haploid_11x22, haploid_22);
 		
+		log << "\nind1ch1: ";
 		for(int h=0; h < haploid_11.num_overlaps; ++h){
 			// ++n_total_IBD;
 			// total_len = total_len + (haploid_11.Rpos[h] - haploid_11.Lpos[h]);
 			log << haploid_11.Lpos[h] << "->" << haploid_11.Rpos[h] << "    ";
 		}
+		log << "\nind1ch2: ";
 		for(int h=0; h < haploid_12.num_overlaps; ++h){
 			log << haploid_12.Lpos[h] << "->" << haploid_12.Rpos[h] << "    ";			
 		}
+		log << "\nind2ch1: ";
 		for(int h=0; h < haploid_21.num_overlaps; ++h){
 			log << haploid_21.Lpos[h] << "->" << haploid_21.Rpos[h] << "    ";			
 		}
+		log << "\nind2ch2: ";
 		for(int h=0; h < haploid_22.num_overlaps; ++h){
 			log << haploid_22.Lpos[h] << "->" << haploid_22.Rpos[h] << "    ";			
 		}
+		log << "\n";
 		// if (n_total_IBD > 0){
 		// 	rvec1.push_back(j); //simulNo
 		// 	rvec2.push_back(n_total_IBD);

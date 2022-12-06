@@ -691,6 +691,8 @@ RcppExport SEXP SPLUSSimulHaplo_IBD_compare (SEXP s_pro_id1, SEXP s_pro_id2, SEX
 	rvec4.reserve(100);
 	rvec5.reserve(100);
 
+	simulhaplo_compare_IBD(proID1, proID2, BP_len, path, rvec1, rvec2, rvec3, rvec4, rvec5);
+
 	Rcpp::IntegerVector w_rvec1 = Rcpp::wrap(rvec1);
 	Rcpp::IntegerVector w_rvec2 = Rcpp::wrap(rvec2);
 	Rcpp::IntegerVector w_rvec3 = Rcpp::wrap(rvec3);
@@ -700,7 +702,9 @@ RcppExport SEXP SPLUSSimulHaplo_IBD_compare (SEXP s_pro_id1, SEXP s_pro_id2, SEX
 	Rcpp::DataFrame results = Rcpp::DataFrame::create(
 		Rcpp::Named("simulNo") 		= w_rvec1,
 		Rcpp::Named("n_seg")  		= w_rvec2,
-		Rcpp::Named("pIBD") 	    = w_rvec3
+		Rcpp::Named("pIBD") 	    = w_rvec3,
+		Rcpp::Named("mean_seg_len") = w_rvec4,
+		Rcpp::Named("min_seg_len")  = w_rvec5
 	);
 	
 	return results;
