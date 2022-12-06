@@ -676,6 +676,35 @@ RcppExport SEXP SPLUSSimulHaplo_traceback(SEXP s_proID, SEXP s_ancestorID, SEXP 
 	
 	return results;
 }
+
+RcppExport SEXP SPLUSSimulHaplo_IBD_compare (SEXP s_pro_id1, SEXP s_pro_id2, SEXP s_BP_len, SEXP path_to_file){
+	int proID1 = *(INTEGER(s_pro_id1));
+	int proID2 = *(INTEGER(s_pro_id2));
+	int BP_len = *(INTEGER(s_BP_len)) ;
+
+	std::string path = Rcpp::as<std::string>(path_to_file);
+
+	std::vector<int> rvec1, rvec2, rvec3, rvec4, rvec5;
+	rvec1.reserve(100);
+	rvec2.reserve(100);
+	rvec3.reserve(100);
+	rvec4.reserve(100);
+	rvec5.reserve(100);
+
+	Rcpp::IntegerVector w_rvec1 = Rcpp::wrap(rvec1);
+	Rcpp::IntegerVector w_rvec2 = Rcpp::wrap(rvec2);
+	Rcpp::IntegerVector w_rvec3 = Rcpp::wrap(rvec3);
+	Rcpp::IntegerVector w_rvec4 = Rcpp::wrap(rvec4);
+	Rcpp::IntegerVector w_rvec5 = Rcpp::wrap(rvec5);
+
+	Rcpp::DataFrame results = Rcpp::DataFrame::create(
+		Rcpp::Named("simulNo") 		= w_rvec1,
+		Rcpp::Named("n_seg")  		= w_rvec2,
+		Rcpp::Named("pIBD") 	    = w_rvec3
+	);
+	
+	return results;
+}
 /*FONCTION D'INTERFACE POUR SPLUS*/
 
 /// Fonction d'interface Splus pour simul

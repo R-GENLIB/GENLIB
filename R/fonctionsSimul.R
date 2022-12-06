@@ -188,6 +188,10 @@ gen.simuHaplo_traceback = function(gen, proID, ancestorID, all_nodes_path, proba
 	return(x)
 }
 
+gen.simuHaplo_IBD_compare = function (proID_1, proID_2, BP_len, proband_haplotypes_path)
+{
+	x = .Call("SPLUSSimulHaplo_IBD_compare", as.integer(proID_1), as.integer(proID_2), as.integer(BP_len), proband_haplotypes_path)
+}
 gen.simuSample = function(gen, pro, ancestors, stateAncestors, simulNo = 5000)#, named = T)
 {
 	if(!is(gen, "GLgen"))
