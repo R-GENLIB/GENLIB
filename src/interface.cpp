@@ -670,8 +670,8 @@ RcppExport SEXP SPLUSSimulHaplo_traceback(SEXP s_proID, SEXP s_ancestorID, SEXP 
 
 	Rcpp::DataFrame results = Rcpp::DataFrame::create(
 		Rcpp::Named("simulNo") 		= w_resultvec1,
-		Rcpp::Named("pathno")  		= w_resultvec2,
-		Rcpp::Named("seg_length") 	= w_resultvec3
+		Rcpp::Named("seg_length")  	= w_resultvec2,
+		Rcpp::Named("path_n") 	    = w_resultvec3
 	);
 	
 	return results;
@@ -684,27 +684,25 @@ RcppExport SEXP SPLUSSimulHaplo_IBD_compare (SEXP s_pro_id1, SEXP s_pro_id2, SEX
 
 	std::string path = Rcpp::as<std::string>(path_to_file);
 
-	std::vector<int> rvec1, rvec2, rvec3, rvec4, rvec5;
+	std::vector<double> rvec3;
+	std::vector<int> rvec1, rvec2, rvec4;
 	rvec1.reserve(100);
 	rvec2.reserve(100);
 	rvec3.reserve(100);
 	rvec4.reserve(100);
-	rvec5.reserve(100);
 
-	simulhaplo_compare_IBD(proID1, proID2, BP_len, path, rvec1, rvec2, rvec3, rvec4, rvec5);
+	simulhaplo_compare_IBD(proID1, proID2, BP_len, path, rvec1, rvec2, rvec3, rvec4);
 
 	Rcpp::IntegerVector w_rvec1 = Rcpp::wrap(rvec1);
 	Rcpp::IntegerVector w_rvec2 = Rcpp::wrap(rvec2);
-	Rcpp::IntegerVector w_rvec3 = Rcpp::wrap(rvec3);
+	Rcpp::NumericVector w_rvec3 = Rcpp::wrap(rvec3);
 	Rcpp::IntegerVector w_rvec4 = Rcpp::wrap(rvec4);
-	Rcpp::IntegerVector w_rvec5 = Rcpp::wrap(rvec5);
 
 	Rcpp::DataFrame results = Rcpp::DataFrame::create(
 		Rcpp::Named("simulNo") 		= w_rvec1,
 		Rcpp::Named("n_seg")  		= w_rvec2,
 		Rcpp::Named("pIBD") 	    = w_rvec3,
-		Rcpp::Named("mean_seg_len") = w_rvec4,
-		Rcpp::Named("min_seg_len")  = w_rvec5
+		Rcpp::Named("mean_seg_len") = w_rvec4
 	);
 	
 	return results;

@@ -1154,15 +1154,15 @@ struct tb_ind{
     tb_hap chr[2];
 };
 
-int traceback_internal(std::ofstream& log, tb_ind* curr_ind, int curr_chr, const int& myAnc, const int& Lpos, const int& Rpos, int* tb_path, int& pathlen){
+int traceback_internal( tb_ind* curr_ind, int curr_chr, const int& myAnc, const int& Lpos, const int& Rpos, int* tb_path, int& pathlen){
 //    tb_hap*  curr_hap  = &(curr_ind->chr[curr_chr]); //loop through the tb_ind tree, curr_hap = current haplotype, curr_ind = current individual
     tb_ind*  next_ind  = curr_ind->parents[curr_chr];
 	
     bool keep_looping = true;
     int counter = 0;
-    log << "Lpos: " << Lpos << " Rpos: " << Rpos << "\n" << std::flush;
+    // log << "Lpos: " << Lpos << " Rpos: " << Rpos << "\n" << std::flush;
     while(keep_looping){
-		log << curr_ind->ID << " " << curr_ind->chr[curr_chr].pHap << " " << curr_ind->chr[curr_chr].nRec << "\n"  << std::flush;
+		// log << curr_ind->ID << " " << curr_ind->chr[curr_chr].pHap << " " << curr_ind->chr[curr_chr].nRec << "\n"  << std::flush;
         tb_path[counter] = next_ind->ID;
         counter++;
   
@@ -1176,14 +1176,14 @@ int traceback_internal(std::ofstream& log, tb_ind* curr_ind, int curr_chr, const
         }
         else{
             for(int k=0; k<(curr_ind->chr[curr_chr].nRec); k++){
-				log << curr_ind->chr[curr_chr].RecPos[k] << " " << std::flush;
+				// log << curr_ind->chr[curr_chr].RecPos[k] << " " << std::flush;
                 if(curr_ind->chr[curr_chr].RecPos[k] <= Lpos) count_recomb++;
                 else if((curr_ind->chr[curr_chr].RecPos[k] > Lpos) & (curr_ind->chr[curr_chr].RecPos[k] < Rpos)){
 					pathlen = counter;
                     return -9;
                 }
             }
-			log << "\n" << count_recomb << "\n" << std::flush;
+			// log << "\n" << count_recomb << "\n" << std::flush;
             if (count_recomb%2 == 1){
                 curr_chr = curr_ind->chr[curr_chr].pHap;
                 curr_chr = 1 - curr_chr; //if there is odd # of recombinations before our segment it comes from the other parent (not the start of the chromosome)
@@ -1224,7 +1224,7 @@ int simulhaplo_traceback(std::string& path_ANH, std::string& path_PH, int& myPro
 					std::vector<int>& resultvec1, std::vector<int>& resultvec2, std::vector<int>& resultvec3) 
 {
 	try{
-	std::ofstream log("log.txt");
+	// std::ofstream log("log.txt");
     typedef std::unordered_map<int, std::unique_ptr<tb_ind>> tb_dict;
     tb_dict my_tb_dict;
 
@@ -1265,7 +1265,7 @@ int simulhaplo_traceback(std::string& path_ANH, std::string& path_PH, int& myPro
     std::string chr_string;
     for(int j=0; j<numSim; j++){
         //
-		log << "sim: " << j << "\n" << std::flush;
+		// log << "sim: " << j << "\n" << std::flush;
         int c1_numHits =0, c2_numHits = 0;
         std::vector<int> c1_target_pos_L, c2_target_pos_L, c1_target_pos_R, c2_target_pos_R;
 
@@ -1298,29 +1298,29 @@ int simulhaplo_traceback(std::string& path_ANH, std::string& path_PH, int& myPro
             int indID; //Read the All_nodes_haplo file and fill tb_dict
             for (int i=0; i<numInd; i++){
                 std::getline(file_all_haplo, line);
-				log << line << "\n" << std::flush;
+				// log << line << "\n" << std::flush;
                 tokenPos  = line.find(';');
                 tokenPos1 = line.find(';', tokenPos + 1);
-				log << line.substr(tokenPos+1, tokenPos1-tokenPos-1) << "\n" << std::flush;
+				// log << line.substr(tokenPos+1, tokenPos1-tokenPos-1) << "\n" << std::flush;
                 indID = std::stoi(line.substr(tokenPos+1, tokenPos1-tokenPos-1));
                 tb_ind* node = my_tb_dict.at(indID).get();
 
                 tokenPos   = line.find(';', tokenPos1 + 1);
                 chr_string = line.substr(tokenPos1+1, tokenPos - tokenPos1-1);
-				log << chr_string << "\n" << std::flush;
+				// log << chr_string << "\n" << std::flush;
                 tb_digest_line2(chr_string, node->chr[0].pHap, node->chr[0].nRec, node->chr[0].RecPos);
-				log << indID << " " << node->chr[0].nRec << " " << node->chr[0].pHap << "\n" << std::flush;
+				// log << indID << " " << node->chr[0].nRec << " " << node->chr[0].pHap << "\n" << std::flush;
 
                 tokenPos1  = line.find('}', tokenPos + 1);
                 chr_string = line.substr(tokenPos + 1, tokenPos1 - tokenPos - 1);
-				log << chr_string << "\n" << std::flush;
+				// log << chr_string << "\n" << std::flush;
                 tb_digest_line2(chr_string, node->chr[1].pHap, node->chr[1].nRec, node->chr[1].RecPos);
-				log << indID << " " << node->chr[1].nRec << " " << node->chr[1].pHap << "\n" << std::flush;
+				// log << indID << " " << node->chr[1].nRec << " " << node->chr[1].pHap << "\n" << std::flush;
 
             };
             //now the tb_dict is initialized, with the recomb history, need to do the traceback         
-            log << "c1 hits: " << c1_numHits << "\n" << std::flush;
-            log << "c2 hits: " << c2_numHits << "\n" << std::flush;
+            // log << "c1 hits: " << c1_numHits << "\n" << std::flush;
+            // log << "c2 hits: " << c2_numHits << "\n" << std::flush;
 
             for(int i=0; i<c1_numHits; i++){
 				resultvec1.push_back(j+1);
@@ -1330,9 +1330,9 @@ int simulhaplo_traceback(std::string& path_ANH, std::string& path_PH, int& myPro
                 tb_ind* curr_ind  = my_tb_dict.at(myPro).get();
                 curr_chr  = 0;
 
-				log << "traceback internal\n" << std::flush;
-            	traceback_internal(log, curr_ind, curr_chr, myAnc, Lpos, Rpos, tb_path, pathlen);
-				log << "traceaback internal done\n" << std::flush;
+				// log << "traceback internal\n" << std::flush;
+            	traceback_internal(curr_ind, curr_chr, myAnc, Lpos, Rpos, tb_path, pathlen);
+				// log << "traceaback internal done\n" << std::flush;
 
 				// Rcpp::Rcout  << "simulation: " << j + 1 << "\nchr1 segment: " << Lpos << "->" << Rpos << "\npathlen: " << pathlen << "\npath: ";
 				// for(int h=0; h<pathlen; h++) Rcpp::Rcout << tb_path[h] << " ";
@@ -1345,9 +1345,9 @@ int simulhaplo_traceback(std::string& path_ANH, std::string& path_PH, int& myPro
                 for(std::vector<int>& pathvec : unique_paths ){
 					++path_count;
 					veclen = pathvec.size();
-					log << "check duplicate path\n" <<std::flush;
+					// log << "check duplicate path\n" <<std::flush;
 					if (veclen == (std::size_t)pathlen) duplicate_path = check_duplicate_path(pathvec, pathlen, tb_path);
-					log << "check duplicate done\n" <<std::flush;
+					// log << "check duplicate done\n" <<std::flush;
 					if (duplicate_path)    break;
 					
 				}
@@ -1375,9 +1375,9 @@ int simulhaplo_traceback(std::string& path_ANH, std::string& path_PH, int& myPro
                 tb_ind* curr_ind  = my_tb_dict.at(myPro).get();
                 curr_chr  = 1;
  
-				log << "traceback internal\n" << std::flush;
-            	traceback_internal(log, curr_ind, curr_chr, myAnc, Lpos, Rpos, tb_path, pathlen);
-				log << "traceaback internal done\n" << std::flush;
+				// log << "traceback internal\n" << std::flush;
+            	traceback_internal(curr_ind, curr_chr, myAnc, Lpos, Rpos, tb_path, pathlen);
+				// log << "traceaback internal done\n" << std::flush;
 				
 				bool duplicate_path = false;
 				int path_count = 0;
@@ -1386,9 +1386,9 @@ int simulhaplo_traceback(std::string& path_ANH, std::string& path_PH, int& myPro
                 for(std::vector<int>& pathvec : unique_paths ){
 					++path_count;
 					veclen = pathvec.size();
-					log << "check duplicate\n" << std::flush;
+					// log << "check duplicate\n" << std::flush;
 					if (veclen == (std::size_t)pathlen) duplicate_path = check_duplicate_path(pathvec, pathlen, tb_path);
-					log << "check duplicate done\n" << std::flush;
+					// log << "check duplicate done\n" << std::flush;
 					if (duplicate_path)    break;
 				}
 
@@ -1400,10 +1400,12 @@ int simulhaplo_traceback(std::string& path_ANH, std::string& path_PH, int& myPro
         }
     }
 
+	line = "";
 	for (int i = 0, veclen = unique_paths.size(); i != veclen; ++i){
-		Rcpp::message(Rcpp::wrap("\npath: "+std::to_string(i+1)+"\n"));
-		for (const int& node : unique_paths.at(i)) Rcpp::message(Rcpp::wrap(std::to_string(node)+" "));
+		line += ("\npath: "+ std::to_string(i+1)+ " ");
+		for (const int& node : unique_paths.at(i)) line += (std::to_string(node)+ " ");
 	}  
+	Rcpp::message(Rcpp::wrap(line));
 
 	return 0;
 	} catch(std::exception &ex) {
@@ -1548,7 +1550,7 @@ inline void check_HBD(const overlaps& hx1, const overlaps& hx2, overlaps& h){
 			++count;
 		}
 	}
-	for (std::size_t i=0; i<hx2.num_overlaps; ++i){
+	for (int i=0; i<hx2.num_overlaps; ++i){
 		if(!HBD_hx2.at(i)){
 			h.Lpos[count] = hx2.Lpos[i];
 			h.Rpos[count] = hx2.Rpos[i];
@@ -1565,9 +1567,9 @@ inline void check_HBD(const overlaps& hx1, const overlaps& hx2, overlaps& h){
 	h.num_overlaps = count;
 }
 
-void simulhaplo_compare_IBD(const int& pro1_ID, const int& pro2_ID, const int& BP_len, std::string& file_path, std::vector<int>& rvec1, std::vector<int>& rvec2, std::vector<int>& rvec3, std::vector<int>& rvec4, std::vector<int>& rvec5) {
+void simulhaplo_compare_IBD(const int& pro1_ID, const int& pro2_ID, const int& BP_len, std::string& file_path, std::vector<int>& rvec1, std::vector<int>& rvec2, std::vector<double>& rvec3, std::vector<int>& rvec4) {
     try{
-	std::ofstream log("log.txt");
+	// std::ofstream log("log.txt");
 	std::ifstream  in (file_path);
     std::string line;
     std::getline(in, line); //
@@ -1581,11 +1583,10 @@ void simulhaplo_compare_IBD(const int& pro1_ID, const int& pro2_ID, const int& B
 
     int ProID, SimNo;
     std::string chr_string;
-
 	seg_positions pro1_1, pro1_2, pro2_1, pro2_2;
 
     for(int j=0; j<numSim; ++j){
-		log << "simulation: " << j << "\n";
+		// log << "simulation: " << j << "\n";
         //loop through all probands
         for(int i=0; i<numPro; ++i){
             std::getline(in,line);
@@ -1599,53 +1600,36 @@ void simulhaplo_compare_IBD(const int& pro1_ID, const int& pro2_ID, const int& B
                 tokenPos    = line.find('}');
                 tokenPos1   = line.find('}', tokenPos + 1);
                 chr_string  = line.substr(tokenPos+2, tokenPos1-tokenPos-2);
-				log << ProID << "\n" << chr_string << "\n";
+				// log << ProID << "\n" << chr_string << "\n";
                 digest_line(chr_string, pro1_1);
 
                 tokenPos    = line.find('}', tokenPos1 + 1);
                 chr_string = line.substr(tokenPos1+2, tokenPos-tokenPos1-2);
-				log << chr_string << "\n";
+				// log << chr_string << "\n";
                 digest_line(chr_string, pro1_2);
             }
 			else if( ProID == pro2_ID){
 				tokenPos    = line.find('}');
                 tokenPos1   = line.find('}', tokenPos + 1);
                 chr_string  = line.substr(tokenPos+2, tokenPos1-tokenPos-2);
-				log << ProID << "\n" << chr_string << "\n";
+				// log << ProID << "\n" << chr_string << "\n";
                 digest_line(chr_string, pro2_1);
 
                 tokenPos    = line.find('}', tokenPos1 + 1);
                 chr_string = line.substr(tokenPos1+2, tokenPos-tokenPos1-2);
-				log << chr_string << "\n" << std::flush;
+				// log << chr_string << "\n" << std::flush;
                 digest_line(chr_string, pro2_2);
 			}
         } 
 
 		overlaps haploid_11x21, haploid_11x22, haploid_12x21, haploid_12x22;
 		seg_overlap(pro1_1, pro2_1, haploid_11x21);
-		log << 	"1x1\n";
-		for (int i = 0; i < haploid_11x21.num_overlaps; i++){
-			log << haploid_11x21.Lpos[i] << "->" << haploid_11x21.Rpos[i] <<"   ";
-		};
 		seg_overlap(pro1_1, pro2_2, haploid_11x22);
-		log << 	"\n1x2\n";
-		for (int i = 0; i < haploid_11x22.num_overlaps; i++){
-			log << haploid_11x22.Lpos[i] << "->" << haploid_11x22.Rpos[i]<<"   ";
-		};
 		seg_overlap(pro1_2, pro2_1, haploid_12x21);
-		log << 	"\n2x1\n";
-		for (int i = 0; i < haploid_12x21.num_overlaps; i++){
-			log << haploid_12x21.Lpos[i] << "->" << haploid_12x21.Rpos[i]<<"   ";
-		};
 		seg_overlap(pro1_2, pro2_2, haploid_12x22);
-		log << 	"\n2x2\n";
-		for (int i = 0; i < haploid_11x22.num_overlaps; i++){
-			log << haploid_12x22.Lpos[i] << "->" << haploid_12x22.Rpos[i]<<"   ";
-		};
-		// int n_total_IBD = 0;
-		// int total_len = 0;
-		// int min = 0;
-		// int max = 0;
+
+		int n_seg = 0;
+		int total_len = 0;
 
 		//returns a dataframe with the following columns: simulNo, len_Shared_IBD, num_seg, mean_len, min_len, max_len
 		//no printing to r console just do the dataframe
@@ -1654,33 +1638,58 @@ void simulhaplo_compare_IBD(const int& pro1_ID, const int& pro2_ID, const int& B
 		check_HBD(haploid_12x21, haploid_12x22, haploid_12);
 		check_HBD(haploid_11x21, haploid_12x21, haploid_21);
 		check_HBD(haploid_12x22, haploid_11x22, haploid_22);
-		
-		log << "\nind1ch1: ";
-		for(int h=0; h < haploid_11.num_overlaps; ++h){
-			// ++n_total_IBD;
-			// total_len = total_len + (haploid_11.Rpos[h] - haploid_11.Lpos[h]);
-			log << haploid_11.Lpos[h] << "->" << haploid_11.Rpos[h] << "    ";
-		}
-		log << "\nind1ch2: ";
-		for(int h=0; h < haploid_12.num_overlaps; ++h){
-			log << haploid_12.Lpos[h] << "->" << haploid_12.Rpos[h] << "    ";			
-		}
-		log << "\nind2ch1: ";
-		for(int h=0; h < haploid_21.num_overlaps; ++h){
-			log << haploid_21.Lpos[h] << "->" << haploid_21.Rpos[h] << "    ";			
-		}
-		log << "\nind2ch2: ";
-		for(int h=0; h < haploid_22.num_overlaps; ++h){
-			log << haploid_22.Lpos[h] << "->" << haploid_22.Rpos[h] << "    ";			
-		}
-		log << "\n";
-		// if (n_total_IBD > 0){
-		// 	rvec1.push_back(j); //simulNo
-		// 	rvec2.push_back(n_total_IBD);
-		// 	rvec3.push_back(total_len/4/BP_len);
-		// 	rvec4.push_back(min);
-		// 	rvec5.push_back(max);
-		// }
+		// log << "simulation: " << j+1 << "\n" << std::flush;
+		// Rcpp::Rcout << haploid_11.num_overlaps << " " << haploid_12.num_overlaps << " " << haploid_21.num_overlaps << " " << haploid_22.num_overlaps << "\n";
+		if(haploid_11.num_overlaps + haploid_12.num_overlaps + haploid_21.num_overlaps + haploid_22.num_overlaps){
+			line = "simulation: " + std::to_string(j+1);
+			if(haploid_11.num_overlaps){
+				line += "\npro. 1, chr. 1: ";
+				// log << "pro. 1, chr. 1:\n";
+				n_seg = n_seg + haploid_11.num_overlaps;
+				for(int h=0; h < haploid_11.num_overlaps; ++h){
+					line += std::to_string(haploid_11.Lpos[h]) + "->" + std::to_string(haploid_11.Rpos[h]) + "	";
+					// log << haploid_11.Lpos[h] << "->" << haploid_11.Rpos[h] <<"\n";
+					total_len = total_len + (haploid_11.Rpos[h] - haploid_11.Lpos[h]);
+				}
+			}
+			if(haploid_12.num_overlaps){
+				line += "\npro. 1, chr. 2: ";
+				// log << "pro. 1, chr. 2:\n";
+				n_seg = n_seg + haploid_12.num_overlaps;
+				for(int h=0; h < haploid_12.num_overlaps; ++h){
+					line += std::to_string(haploid_12.Lpos[h]) + "->" + std::to_string(haploid_12.Rpos[h]) +"	";
+					// log << haploid_12.Lpos[h] << "->" << haploid_12.Rpos[h] <<"\n";
+					total_len = total_len + (haploid_12.Rpos[h] - haploid_12.Lpos[h]);
+				}
+			}
+			if(haploid_21.num_overlaps){
+				line+= "\npro. 2, chr. 1: ";
+				// log << "pro. 2, chr. 1:\n";
+				n_seg = n_seg + haploid_21.num_overlaps;
+				for(int h=0; h < haploid_21.num_overlaps; ++h){
+					line += std::to_string(haploid_21.Lpos[h]) + "->" + std::to_string(haploid_21.Rpos[h]) +"	";					
+					// log << haploid_21.Lpos[h] << "->" << haploid_21.Rpos[h] <<"\n";
+					total_len = total_len + (haploid_21.Rpos[h] - haploid_21.Lpos[h]);			
+				}
+			}
+			if(haploid_22.num_overlaps){
+				line+= "\npro. 2, chr. 2: ";
+				// log << "pro. 2, chr. 2:\n";
+				n_seg = n_seg + haploid_22.num_overlaps;
+				for(int h=0; h < haploid_22.num_overlaps; ++h){
+					line += std::to_string(haploid_22.Lpos[h]) + "->" + std::to_string(haploid_22.Rpos[h]) +"	";					
+					// log << haploid_22.Lpos[h] << "->" << haploid_22.Rpos[h] <<"\n";
+					total_len = total_len + (haploid_22.Rpos[h] - haploid_22.Lpos[h]);
+				}
+			}
+			Rcpp::message(Rcpp::wrap(line));	
+		}			
+		if (n_seg > 0){
+			rvec1.push_back(j+1); //simulNo
+			rvec2.push_back(n_seg);
+			rvec3.push_back(100*(static_cast<float>(total_len))/(4*BP_len));
+			rvec4.push_back(total_len/n_seg);
+		}		
     }
 
 	} catch(std::exception &ex) {
