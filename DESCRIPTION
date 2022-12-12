@@ -1,8 +1,8 @@
 Package: GENLIB
 Type: Package
 Title: Genealogical Data Analysis
-Version: 1.1.7
-Date: 2022-10-31
+Version: 1.1.8
+Date: 2022-12-07
 Authors@R: c( person("Louis",			 "Houde",        role="aut"),
 		    person("Jean-Francois",	"Lefebvre",	role="aut", email="jf_lef@yahoo.ca"),
 		    person("Valery",		"Roy-Lagace",	role="aut"),
