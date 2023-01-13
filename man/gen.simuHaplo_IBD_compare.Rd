@@ -40,5 +40,6 @@ gen.graph(sample_gen)
 gen.simuHaplo(sample_gen, simulNo=5, model = 1, model_params = c(1,1), cM_len=c(100,100),
                 BP_len = 100000000, outDir=tempdir())
 
-IBD_compare <- gen.simuHaplo_IBD_compare(7, 8, 100000000, paste(tempdir(), "Proband_haplotypes.txt", sep="/"))
+IBD_compare <- gen.simuHaplo_IBD_compare(7, 8, 100000000, 
+                paste(tempdir(), "Proband_Haplotypes.txt", sep="/"))
 }

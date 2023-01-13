@@ -2534,7 +2534,7 @@ SEXP simulsingleFct(int * Genealogie, int * proposant, int lproposant, int * plA
 		Rcpp::IntegerMatrix ans(lproposant, 2);
 
 		Rcpp::CharacterVector rowNames(lproposant);
-		for(int i=0; i<lproposant; i++) { char nomLigne [10]; /*int n = */sprintf(nomLigne, "%d", proposant[i]); rowNames[i] = nomLigne; }
+		for(int i=0; i<lproposant; i++) { char nomLigne [10]; /*int n = */snprintf(nomLigne, 10, "%d", proposant[i]); rowNames[i] = nomLigne; }
 		//for(int i=0; i<lproposant; i++) sprintf(rowNames[i], "%d", proposant[i]); // itoa(proposant[i], &rowNames[i], 10)
 
 		Rcpp::List dimnms = Rcpp::List::create( rowNames, //Rcpp::as<Rcpp::CharacterVector>(indSelect[i]),
