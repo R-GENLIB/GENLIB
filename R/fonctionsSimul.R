@@ -101,39 +101,43 @@ gen.simuProb = function(gen, pro, statePro, ancestors, stateAncestors, simulNo=5
 }
 #print.it = F, 
 
-gen.simuHaplo = function (gen, pro=NULL, ancestors=NULL, simulNo = 1, model =1, model_params, cM_len, 
-							BP_len, physical_map_Mo = NULL, physical_map_Fa = NULL, seed= 0, all_nodes =0, outDir = getwd()){
+#check that the provided dataframe is a valid map 
+check_map = function(df, BP_len, cM_len){
+	if(!("BP" %in% colnames(df)) || !("cM" %in% colnames(df)))
+		stop("invalid map: column named 'BP', and 'cM' must be present. Names are case-sensitive")
+	if((df$BP[1]!=0) || (df$cM[1]!=0))
+		stop("invalid map: first element of BP and cM columns should be 0")
+	if(!(is.unsorted(df$BP) || !(is.unsorted)))
+		stop("invalid map: BP and cM columns must be in ascending order")
+	if((df$BP[df$BP]!=BP_len) || (df$cM[length(df$cM)]!=cM_len[1]))
+		stop("last element of BP and cM columns should be BP_len, and cM_len, respectively")
+}
+
+gen.drop = function (gen, pro=NULL, ancestors=NULL, model =1, model_params, cM_len, 
+					BP_len, physical_map_Mo = NULL, physical_map_Fa = NULL, 
+					mapfile_path, pedfile_path, out = NULL, seed=0)
+{
 	if(!is(gen, "GLgen"))
 		stop("Invalid parameter: gen must be an instance of Glgen (see gen.genealogy)")
-	if(simulNo <= 0)
-		stop("Invalid parameter: simulNo must be greater than zero")
 	if(is.null(ancestors))
 		ancestors = gen.founder(gen)
+		message("no ancestors specified. will use all founders of given probands")
 	if(is.null(pro))
 		pro=gen.pro(gen)
+		message("no probands specified. will use all probands of given genealogy")
 	BP_len = as.integer(BP_len)
-
 
 	if(length(model_params) != 2)
 		stop("model_params must be a vector of length 2")
 	if(!is(cM_len, "numeric"))
-		stop("Invalid parameter: MorganLen must be a numeric vector")
+		stop("Invalid parameter: cM_len must be a numeric vector")
 	if(length(cM_len) != 2)
 		stop("cM_len must be a vector of length 2")
-	#comparisons to NULL don't produce boolean value	
-	#if(Reconstruction==1 & (Hapfile==NULL | Mapfile==NULL))
-		#stop("If reconstruction is set to 1 must specify the hap and map files")
-	# if(Reconstruction==1 & BP==0)
-	# 	stop("If reconstruction is set to 1, you must specify the size of the segment in BP")
-	# if(Reconstruction==1 & (is.null(Hapfile) | is.null(Mapfile)))
-	# 	stop("If reconstruction is set to 1, you must provide a hap file and map file")		
-
 	if(seed==0)
 		seed=as.integer(Sys.time())
-	
 	if(is.null(physical_map_Fa) & is.null(physical_map_Mo)){
 		message("No map function specified to convert genetic distance to physical. Assumed constant along length of chromosome")
-		convert = 0
+		convert = 0L
 		bp_map_FA = 0
 		cm_map_FA = 0
 		bp_map_MO = 0
@@ -141,63 +145,133 @@ gen.simuHaplo = function (gen, pro=NULL, ancestors=NULL, simulNo = 1, model =1, 
 	}
 	else{
 		#need to check that the maps are valid
-		convert = 1
-		if(!("BP" %in% colnames(physical_map_Fa)) || !("cM" %in% colnames(physical_map_Fa)))
-			stop("column names 'BP', or 'cM' not in physical_map_Fa. Names are case-sensitive")
-		if(!("BP" %in% colnames(physical_map_Mo)) || !("cM" %in% colnames(physical_map_Mo)))
-			stop("column names 'BP', or 'cM' not in physical_map_Fa. Names are case-sensitive")
+		convert = 1L
+		check_map(physical_map_Fa, BP_len, cM_len)
+		check_map(physical_map_Mo, BP_len, cM_len)
 		bp_map_FA = as.integer(physical_map_Fa$BP)
 		cm_map_FA = as.numeric(physical_map_Fa$cM)
 		bp_map_MO = as.integer(physical_map_Mo$BP)
 		cm_map_MO = as.numeric(physical_map_Mo$cM)
-
-		if((bp_map_FA[1]!=0) || (cm_map_FA[1]!=0))
-			stop("first element of BP and cM columns should be 0")
-		if((bp_map_MO[1]!=0) || (cm_map_MO[1]!=0))
-			stop("first element of BP and cM columns should be 0")
-		if((bp_map_FA[length(bp_map_FA)]!=BP_len) || (cm_map_FA[length(bp_map_FA)]!=cM_len[1]))
-			stop("last element of BP and cM columns should be BP_len, and cM_len, respectively")
-		if((bp_map_MO[length(bp_map_MO)]!=BP_len) || (cm_map_MO[length(bp_map_MO)]!=cM_len[2]))
-			stop("last element of BP and cM columns should be BP_len, and cM_len, respectively")
 	}
-	
+
+	if(is.null(out)) out = normalizePath(paste0(getwd(),"/genedrop"), mustWork=FALSE)
+	else out = normalizePath(paste0(out,".ped"), mustWork=FALSE)
+
+	mapfile_path = normalizePath(mapfile_path)
+	pedfile_path = normalizePath(pedfile_path)
+
 	message("seed: ", seed, "\n")
 
-	.Call("SPLUSSimulHaplo", gen@.Data, pro, length(pro), ancestors, length(ancestors), as.integer(simulNo), model_params, cM_len/100, as.integer(model), 
-			as.integer(convert), as.integer(BP_len), as.integer(bp_map_FA), cm_map_FA, as.integer(bp_map_MO), cm_map_MO, 
-			outDir, as.integer(all_nodes), as.integer(seed), package="GENLIB")
+	p_IBD_matrix = double(length(pro)^2)
 
-	if(all_nodes == 0)
-		message("output file:  ", outDir, "/Proband_Haplotypes.txt\n")
-	else
-		message("output files:\n", outDir, "/All_nodes_haplotypes.txt\n", outDir, "/Proband_Haplotypes.txt\n")
-
+	.Call("gen_drop", gen@.Data, pro, length(pro), ancestors, length(ancestors), model_params, cM_len/100, as.integer(model), 
+			convert, as.integer(BP_len), as.integer(bp_map_FA), cm_map_FA, as.integer(bp_map_MO), cm_map_MO, 
+			out, mapfile_path, pedfile_path, as.integer(seed), p_IBD_matrix, package="GENLIB")
+	
+	dim(p_IBD_matrix) <- c(length(pro), length(pro))
+	return (p_IBD_matrix)
 }
 
-gen.simuHaplo_traceback = function(gen, proID, ancestorID, all_nodes_path, proband_haplotypes_path)
-{
-	t <- gen.genout(gen)
-	indVec <- t$ind
-	fatherVec <- t$father
-	motherVec <- t$mother
+# gen.simuHaplo = function (gen, pro=NULL, ancestors=NULL, simulNo = 1, model =1, model_params, cM_len, 
+# 							BP_len, physical_map_Mo = NULL, physical_map_Fa = NULL, seed= 0, all_nodes =0, outDir = getwd()){
+# 	if(!is(gen, "GLgen"))
+# 		stop("Invalid parameter: gen must be an instance of Glgen (see gen.genealogy)")
+# 	if(simulNo <= 0)
+# 		stop("Invalid parameter: simulNo must be greater than zero")
+# 	if(is.null(ancestors))
+# 		ancestors = gen.founder(gen)
+# 	if(is.null(pro))
+# 		pro=gen.pro(gen)
+# 	BP_len = as.integer(BP_len)
 
-	message("input file paths:\n", all_nodes_path, "\n", proband_haplotypes_path, "\n")
 
-	x = .Call("SPLUSSimulHaplo_traceback", as.integer(proID), as.integer(ancestorID), indVec, fatherVec, motherVec, all_nodes_path, proband_haplotypes_path, package="GENLIB")
-	#need to pass in the vectors that will hold the results
-	return(x)
-}
+# 	if(length(model_params) != 2)
+# 		stop("model_params must be a vector of length 2")
+# 	if(!is(cM_len, "numeric"))
+# 		stop("Invalid parameter: cM_len must be a numeric vector")
+# 	if(length(cM_len) != 2)
+# 		stop("cM_len must be a vector of length 2")
 
-gen.simuHaplo_IBD_compare = function (proID_1, proID_2, BP_len, proband_haplotypes_path)
-{
-	x = .Call("SPLUSSimulHaplo_IBD_compare", as.integer(proID_1), as.integer(proID_2), as.integer(BP_len), proband_haplotypes_path)
-	return(x)
-}
+# 	#comparisons to NULL don't produce boolean value	
+# 	#if(Reconstruction==1 & (Hapfile==NULL | Mapfile==NULL))
+# 		#stop("If reconstruction is set to 1 must specify the hap and map files")
+# 	# if(Reconstruction==1 & BP==0)
+# 	# 	stop("If reconstruction is set to 1, you must specify the size of the segment in BP")
+# 	# if(Reconstruction==1 & (is.null(Hapfile) | is.null(Mapfile)))
+# 	# 	stop("If reconstruction is set to 1, you must provide a hap file and map file")		
 
-gen.simuHaplo_convert = function (dir = getwd())
-{
-	x = .Call("SPLUSSimulHaplo_convert", dir)
-}
+# 	if(seed==0)
+# 		seed=as.integer(Sys.time())
+	
+# 	if(is.null(physical_map_Fa) & is.null(physical_map_Mo)){
+# 		message("No map function specified to convert genetic distance to physical. Assumed constant along length of chromosome")
+# 		convert = 0
+# 		bp_map_FA = 0
+# 		cm_map_FA = 0
+# 		bp_map_MO = 0
+# 		cm_map_MO = 0
+# 	}
+# 	else{
+# 		#need to check that the maps are valid
+# 		convert = 1
+# 		if(!("BP" %in% colnames(physical_map_Fa)) || !("cM" %in% colnames(physical_map_Fa)))
+# 			stop("column names 'BP', or 'cM' not in physical_map_Fa. Names are case-sensitive")
+# 		if(!("BP" %in% colnames(physical_map_Mo)) || !("cM" %in% colnames(physical_map_Mo)))
+# 			stop("column names 'BP', or 'cM' not in physical_map_Fa. Names are case-sensitive")
+# 		bp_map_FA = as.integer(physical_map_Fa$BP)
+# 		cm_map_FA = as.numeric(physical_map_Fa$cM)
+# 		bp_map_MO = as.integer(physical_map_Mo$BP)
+# 		cm_map_MO = as.numeric(physical_map_Mo$cM)
+
+# 		if((bp_map_FA[1]!=0) || (cm_map_FA[1]!=0))
+# 			stop("first element of BP and cM columns should be 0")
+# 		if((bp_map_MO[1]!=0) || (cm_map_MO[1]!=0))
+# 			stop("first element of BP and cM columns should be 0")
+# 		if((bp_map_FA[length(bp_map_FA)]!=BP_len) || (cm_map_FA[length(bp_map_FA)]!=cM_len[1]))
+# 			stop("last element of BP and cM columns should be BP_len, and cM_len, respectively")
+# 		if((bp_map_MO[length(bp_map_MO)]!=BP_len) || (cm_map_MO[length(bp_map_MO)]!=cM_len[2]))
+# 			stop("last element of BP and cM columns should be BP_len, and cM_len, respectively")
+# 	}
+	
+# 	message("seed: ", seed, "\n")
+
+# 	.Call("SPLUSSimulHaplo", gen@.Data, pro, length(pro), ancestors, length(ancestors), as.integer(simulNo), model_params, cM_len/100, as.integer(model), 
+# 			as.integer(convert), as.integer(BP_len), as.integer(bp_map_FA), cm_map_FA, as.integer(bp_map_MO), cm_map_MO, 
+# 			outDir, as.integer(all_nodes), as.integer(seed), package="GENLIB")
+
+# 	if(all_nodes == 0)
+# 		message("output file:  ", outDir, "/Proband_Haplotypes.txt\n")
+# 	else
+# 		message("output files:\n", outDir, "/All_nodes_haplotypes.txt\n", outDir, "/Proband_Haplotypes.txt\n")
+
+# }
+
+# gen.simuHaplo_traceback = function(gen, proID, ancestorID, all_nodes_path, proband_haplotypes_path)
+# {
+# 	t <- gen.genout(gen)
+# 	indVec <- t$ind
+# 	fatherVec <- t$father
+# 	motherVec <- t$mother
+
+# 	message("input file paths:\n", all_nodes_path, "\n", proband_haplotypes_path, "\n")
+
+# 	x = .Call("SPLUSSimulHaplo_traceback", as.integer(proID), as.integer(ancestorID), indVec, fatherVec, motherVec, all_nodes_path, proband_haplotypes_path, package="GENLIB")
+# 	#need to pass in the vectors that will hold the results
+# 	return(x)
+# }
+
+# gen.simuHaplo_IBD_compare = function (proID_1, proID_2, BP_len, proband_haplotypes_path)
+# {
+# 	x = .Call("SPLUSSimulHaplo_IBD_compare", as.integer(proID_1), as.integer(proID_2), as.integer(BP_len), proband_haplotypes_path)
+# 	return(x)
+# }
+
+# gen.simuHaplo_convert = function (dir = getwd())
+# {
+# 	x = .Call("SPLUSSimulHaplo_convert", dir)
+# }
+
+
 gen.simuSample = function(gen, pro, ancestors, stateAncestors, simulNo = 5000)#, named = T)
 {
 	if(!is(gen, "GLgen"))

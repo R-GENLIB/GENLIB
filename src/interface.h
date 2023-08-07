@@ -68,11 +68,14 @@ GENLIBDLL_DLL_API(SEXP) SPLUSCGCumul(SEXP Genealogie, SEXP plProposant,SEXP lNPr
 
 GENLIBDLL_DLL_API(SEXP) SPLUSCGCumuldirect(SEXP matriceCG, SEXP lNProposant, SEXP plAncetre, SEXP lNAncetre, SEXP AncRet, SEXP  pdSomAnc, SEXP pdSomCumul);
 
-GENLIBDLL_DLL_API(SEXP) SPLUSSimulHaplo(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, SEXP sAncestors, SEXP sLenAncestors, SEXP snSimul, SEXP sProbRecomb, 
-											SEXP sMorgan_Len, SEXP smodel, SEXP s_convert, SEXP sBP, SEXP s_bp_map_FA, SEXP s_cm_map_FA, SEXP s_bp_map_MO, SEXP s_cm_map_MO, 
-											SEXP sWD, SEXP sAll_node, SEXP sSeed);
+GENLIBDLL_DLL_API(SEXP) gen_drop(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, SEXP sAncestors, SEXP sLenAncestors, SEXP sProbRecomb, 
+					SEXP sMorgan_Len, SEXP smodel, SEXP s_convert, SEXP sBP, SEXP s_bp_map_FA, SEXP s_cm_map_FA, SEXP s_bp_map_MO, SEXP s_cm_map_MO, 
+					SEXP out, SEXP mapfile_path, SEXP pedfile_path, SEXP sSeed, SEXP R_matrix);
+// GENLIBDLL_DLL_API(SEXP) SPLUSSimulHaplo(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, SEXP sAncestors, SEXP sLenAncestors, SEXP snSimul, SEXP sProbRecomb, 
+// 											SEXP sMorgan_Len, SEXP smodel, SEXP s_convert, SEXP sBP, SEXP s_bp_map_FA, SEXP s_cm_map_FA, SEXP s_bp_map_MO, SEXP s_cm_map_MO, 
+// 											SEXP sWD, SEXP sAll_node, SEXP sSeed);
 											
-GENLIBDLL_DLL_API(SEXP) SPLUSSimulHaplo_traceback(SEXP s_proID, SEXP s_ancestorID, SEXP s_indVec, SEXP s_fatherVec, SEXP s_motherVec, SEXP path_ANH, SEXP path_PH);
+// GENLIBDLL_DLL_API(SEXP) SPLUSSimulHaplo_traceback(SEXP s_proID, SEXP s_ancestorID, SEXP s_indVec, SEXP s_fatherVec, SEXP s_motherVec, SEXP path_ANH, SEXP path_PH);
 											
 //GENLIBDLL_DLL_API(SEXP) SPLUSSimul(SEXP Genealogie, SEXP proposant, SEXP etatproposant,SEXP nproposant, SEXP ancetre, SEXP etatancetre, SEXP nancetre,
 GENLIBDLL_DLL_API(SEXP) SPLUSSimul(SEXP Genealogie, SEXP proposant, SEXP etatproposant,SEXP nproposant, SEXP ancetre, SEXP etatancetre, SEXP nancetre,

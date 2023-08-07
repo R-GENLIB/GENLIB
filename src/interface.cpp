@@ -14,11 +14,12 @@
 #include "apparentement.h"
 #include "congen.h"
 #include "consanguinite.h"
-#include "fondateur.h"
 #include "outils.h"
 #include "genphi.h"
 #include "statanal.h"
 #include "interface.h"
+#include "genedrop.h"
+#include "fondateur.h"
 
 #include <fstream>
 #include <string>
@@ -576,16 +577,15 @@ RcppExport SEXP SPLUSCGCumuldirect(SEXP smatriceCG, SEXP slNProposant, SEXP splA
 //	DIVERS
 // *********
 
- 
-/** \sa SPLUSSimulHaplo() */
-RcppExport SEXP SPLUSSimulHaplo(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, SEXP sAncestors, SEXP sLenAncestors, SEXP snSimul, SEXP sProbRecomb, 
+RcppExport SEXP gen_drop(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, SEXP sAncestors, SEXP sLenAncestors, SEXP sProbRecomb, 
 					SEXP sMorgan_Len, SEXP smodel, SEXP s_convert, SEXP sBP, SEXP s_bp_map_FA, SEXP s_cm_map_FA, SEXP s_bp_map_MO, SEXP s_cm_map_MO, 
-					SEXP sWD, SEXP sAll_node, SEXP sSeed)
-{  
-	
-	int * Genealogie, * proposant, * ancetre, * nproposant, * nancetre, * nSimul, * seed, * model;
-	int * BP, * convert, * bp_map_FA, *bp_map_MO, * All_node;
-	double * probRecomb, *Morgan_Len, *cm_map_FA, *cm_map_MO;	
+					SEXP out, SEXP r_mapfile_path, SEXP r_pedfile_path, SEXP sSeed, SEXP R_matrix)
+
+{
+	int * Genealogie, *proposant, *ancetre, *nproposant, *nancetre, *seed, *model;
+	int * BP, *convert, *bp_map_FA, *bp_map_MO;
+	double *probRecomb, *Morgan_Len, *cm_map_FA, *cm_map_MO;
+	double *p_IBD_matrix;	
 
 	Rcpp::IntegerVector lGenealogie	( sGenealogy );
 	Rcpp::IntegerVector lproposant	( sProbands  );
@@ -598,7 +598,6 @@ RcppExport SEXP SPLUSSimulHaplo(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, S
 	Rcpp::NumericVector lMorgan_Len ( sMorgan_Len);
 
 	convert 	= INTEGER   (s_convert);
-	All_node    = INTEGER   (sAll_node);
 	seed 		= INTEGER   (sSeed);
 	model       = INTEGER   (smodel);
 	Genealogie	= INTEGER	(lGenealogie);
@@ -609,112 +608,25 @@ RcppExport SEXP SPLUSSimulHaplo(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, S
 	BP			= INTEGER 	(sBP);
 	nproposant	= INTEGER	(sLenPro);
 	nancetre	= INTEGER	(sLenAncestors);
-	nSimul		= INTEGER	(snSimul);
+	p_IBD_matrix= REAL	    (R_matrix);
 
 	bp_map_FA 	= INTEGER( l_bp_map_FA);
 	bp_map_MO 	= INTEGER( l_bp_map_MO);
 	cm_map_FA	= REAL 	 ( l_cm_map_FA);
 	cm_map_MO 	= REAL 	 ( l_cm_map_MO);
 
-	std::unordered_map<int, haplotype*> hapRef; // empty unordered_map
-	haplotype *hapVide = new haplotype();
-	hapVide->hap  = "0.1";
-	hapVide->pos  = -1;
-	hapVide->fixe = 1;
-	hapRef[0]=hapVide;
-
-	std::string WD = Rcpp::as<std::string>(sWD);
-
-	simulhaplo(Genealogie, proposant, *nproposant, ancetre, *nancetre, *nSimul, probRecomb, Morgan_Len, *BP, *model, *convert, cm_map_FA, cm_map_MO, bp_map_FA, bp_map_MO, &hapRef, WD, *All_node, *seed);	
-
-	// if (*rec == 1){
-	// 	std::string PathToHap = Rcpp::as<std::string>(sPathToHap);
-	// 	std::string PathToMap = Rcpp::as<std::string>(sPathToMap);
-	// 	std::string WD1 = WD;
-	// 	reconstruct(WD,WD1+="/Proband_Haplotypes.txt",PathToHap, PathToMap, *BP);
-	// }
-
+	std::string out_path     = Rcpp::as<std::string>(out);
+	std::string mapfile_path = Rcpp::as<std::string>(r_mapfile_path);
+	std::string pedfile_path = Rcpp::as<std::string>(r_pedfile_path);
+	
+	pIBD_matrix(Genealogie, proposant, *nproposant, ancetre, *nancetre, 
+				probRecomb, Morgan_Len, *BP, *model, 
+				*convert, cm_map_FA, cm_map_MO, bp_map_FA, bp_map_MO, p_IBD_matrix,
+				out_path, mapfile_path, pedfile_path, *seed);	
 	return R_NilValue;
 }
 
-RcppExport SEXP SPLUSSimulHaplo_traceback(SEXP s_proID, SEXP s_ancestorID, SEXP s_indVec, SEXP s_fatherVec, SEXP s_motherVec, SEXP s_path_ANH, SEXP s_path_PH){
-
-	std::string path_ANH = Rcpp::as<std::string>(s_path_ANH);
-	std::string path_PH  = Rcpp::as<std::string>(s_path_PH);
-
-	int proID = *(INTEGER(s_proID));
-	int ancID = *(INTEGER(s_ancestorID));
-
-	Rcpp::IntegerVector w_indVec(s_indVec);
-	Rcpp::IntegerVector w_motherVec(s_motherVec);
-	Rcpp::IntegerVector w_fatherVec(s_fatherVec);
-
-	std::vector<int> indVec    = Rcpp::as<std::vector<int> >(w_indVec);
-	std::vector<int> motherVec = Rcpp::as<std::vector<int> >(w_motherVec);
-	std::vector<int> fatherVec = Rcpp::as<std::vector<int> >(w_fatherVec);
-
-	std::vector<int> resultvec1;   //simulno
-	resultvec1.reserve(100);  
-	std::vector<int> resultvec2;  // pathno
-	resultvec2.reserve(100);
-	std::vector<int> resultvec3;  //seg length
-	resultvec3.reserve(100);
-	//resultvec1 = std::vector<int> ... (make empty vectors for the results, then pass them into traceback function by reference, then copy them to R
-	//resultvec2 ...
-	simulhaplo_traceback(path_ANH, path_PH, proID, ancID, indVec, motherVec, fatherVec, resultvec1, resultvec2, resultvec3); //resultvec1, resultvec2....
-
-	//after traceback function is done, return a constructed dataframe
-	Rcpp::IntegerVector w_resultvec1 = Rcpp::wrap(resultvec1);
-	Rcpp::IntegerVector w_resultvec2 = Rcpp::wrap(resultvec2);
-	Rcpp::IntegerVector w_resultvec3 = Rcpp::wrap(resultvec3);
-
-	Rcpp::DataFrame results = Rcpp::DataFrame::create(
-		Rcpp::Named("simulNo") 		= w_resultvec1,
-		Rcpp::Named("seg_length")  	= w_resultvec2,
-		Rcpp::Named("path_n") 	    = w_resultvec3
-	);
-	
-	return results;
-}
-
-RcppExport SEXP SPLUSSimulHaplo_IBD_compare (SEXP s_pro_id1, SEXP s_pro_id2, SEXP s_BP_len, SEXP path_to_file){
-	int proID1 = *(INTEGER(s_pro_id1));
-	int proID2 = *(INTEGER(s_pro_id2));
-	int BP_len = *(INTEGER(s_BP_len)) ;
-
-	std::string path = Rcpp::as<std::string>(path_to_file);
-
-	std::vector<double> rvec3;
-	std::vector<int> rvec1, rvec2, rvec4;
-	rvec1.reserve(100);
-	rvec2.reserve(100);
-	rvec3.reserve(100);
-	rvec4.reserve(100);
-
-	simulhaplo_compare_IBD(proID1, proID2, BP_len, path, rvec1, rvec2, rvec3, rvec4);
-
-	Rcpp::IntegerVector w_rvec1 = Rcpp::wrap(rvec1);
-	Rcpp::IntegerVector w_rvec2 = Rcpp::wrap(rvec2);
-	Rcpp::NumericVector w_rvec3 = Rcpp::wrap(rvec3);
-	Rcpp::IntegerVector w_rvec4 = Rcpp::wrap(rvec4);
-
-	Rcpp::DataFrame results = Rcpp::DataFrame::create(
-		Rcpp::Named("simulNo") 		= w_rvec1,
-		Rcpp::Named("n_seg")  		= w_rvec2,
-		Rcpp::Named("pIBD") 	    = w_rvec3,
-		Rcpp::Named("mean_seg_len") = w_rvec4
-	);
-	
-	return results;
-}
-
-RcppExport SEXP SPLUSSimulHaplo_convert (SEXP s_path1){
-	std::string path1 = Rcpp::as<std::string>(s_path1); //WD
-	reconstruct(path1);
-	return R_NilValue;
-}
 /*FONCTION D'INTERFACE POUR SPLUS*/
-
 /// Fonction d'interface Splus pour simul
 /** \sa simul()*/
 //RcppExport SEXP SPLUSSimul(SEXP sGenealogie, SEXP sproposant, SEXP setatproposant, SEXP snproposant, SEXP sancetre, SEXP setatancetre,
