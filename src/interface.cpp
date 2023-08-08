@@ -580,7 +580,6 @@ RcppExport SEXP SPLUSCGCumuldirect(SEXP smatriceCG, SEXP slNProposant, SEXP splA
 RcppExport SEXP gen_drop(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, SEXP sAncestors, SEXP sLenAncestors, SEXP sProbRecomb, 
 					SEXP sMorgan_Len, SEXP smodel, SEXP s_convert, SEXP sBP, SEXP s_bp_map_FA, SEXP s_cm_map_FA, SEXP s_bp_map_MO, SEXP s_cm_map_MO, 
 					SEXP out, SEXP r_mapfile_path, SEXP r_pedfile_path, SEXP sSeed, SEXP R_matrix)
-
 {
 	int * Genealogie, *proposant, *ancetre, *nproposant, *nancetre, *seed, *model;
 	int * BP, *convert, *bp_map_FA, *bp_map_MO;
@@ -623,6 +622,49 @@ RcppExport SEXP gen_drop(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, SEXP sAn
 				probRecomb, Morgan_Len, *BP, *model, 
 				*convert, cm_map_FA, cm_map_MO, bp_map_FA, bp_map_MO, p_IBD_matrix,
 				out_path, mapfile_path, pedfile_path, *seed);	
+	return R_NilValue;
+}
+
+GENLIBDLL_DLL_API(SEXP) gen_drop_IBD(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, SEXP sAncestors, SEXP sLenAncestors, SEXP sProbRecomb, 
+					SEXP sMorgan_Len, SEXP smodel, SEXP s_convert, SEXP sBP, SEXP s_bp_map_FA, SEXP s_cm_map_FA, SEXP s_bp_map_MO, SEXP s_cm_map_MO, 
+					SEXP sSeed, SEXP R_matrix)
+{
+	int * Genealogie, *proposant, *ancetre, *nproposant, *nancetre, *seed, *model;
+	int * BP, *convert, *bp_map_FA, *bp_map_MO;
+	double *probRecomb, *Morgan_Len, *cm_map_FA, *cm_map_MO;
+	double *p_IBD_matrix;	
+
+	Rcpp::IntegerVector lGenealogie	( sGenealogy );
+	Rcpp::IntegerVector lproposant	( sProbands  );
+	Rcpp::IntegerVector lancetre	( sAncestors );
+	Rcpp::IntegerVector l_bp_map_FA ( s_bp_map_FA);
+	Rcpp::IntegerVector l_bp_map_MO ( s_bp_map_MO);
+	Rcpp::NumericVector l_cm_map_FA ( s_cm_map_FA);
+	Rcpp::NumericVector l_cm_map_MO ( s_cm_map_MO);
+	Rcpp::NumericVector lprobRecomb ( sProbRecomb);
+	Rcpp::NumericVector lMorgan_Len ( sMorgan_Len);
+
+	convert 	= INTEGER   (s_convert);
+	seed 		= INTEGER   (sSeed);
+	model       = INTEGER   (smodel);
+	Genealogie	= INTEGER	(lGenealogie);
+	proposant	= INTEGER	(lproposant);
+	ancetre		= INTEGER	(lancetre);
+	probRecomb 	= REAL		(lprobRecomb);
+	Morgan_Len  = REAL		(lMorgan_Len);
+	BP			= INTEGER 	(sBP);
+	nproposant	= INTEGER	(sLenPro);
+	nancetre	= INTEGER	(sLenAncestors);
+	p_IBD_matrix= REAL	    (R_matrix);
+
+	bp_map_FA 	= INTEGER( l_bp_map_FA);
+	bp_map_MO 	= INTEGER( l_bp_map_MO);
+	cm_map_FA	= REAL 	 ( l_cm_map_FA);
+	cm_map_MO 	= REAL 	 ( l_cm_map_MO);
+	
+	pIBD_matrix2(Genealogie, proposant, *nproposant, ancetre, *nancetre, 
+				probRecomb, Morgan_Len, *BP, *model,*convert, 
+				cm_map_FA, cm_map_MO, bp_map_FA, bp_map_MO, p_IBD_matrix,*seed);
 	return R_NilValue;
 }
 

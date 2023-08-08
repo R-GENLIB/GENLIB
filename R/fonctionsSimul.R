@@ -172,6 +172,55 @@ gen.drop = function (gen, pro=NULL, ancestors=NULL, model =1, model_params, cM_l
 	return (p_IBD_matrix)
 }
 
+gen.dropIBD = function (gen, pro=NULL, ancestors=NULL, model =1, model_params, cM_len, 
+					BP_len, physical_map_Mo = NULL, physical_map_Fa = NULL, seed=0)
+{
+	if(!is(gen, "GLgen"))
+		stop("Invalid parameter: gen must be an instance of Glgen (see gen.genealogy)")
+	if(is.null(ancestors))
+		ancestors = gen.founder(gen)
+		message("no ancestors specified. will use all founders of given probands")
+	if(is.null(pro))
+		pro=gen.pro(gen)
+		message("no probands specified. will use all probands of given genealogy")
+	BP_len = as.integer(BP_len)
+
+	if(length(model_params) != 2)
+		stop("model_params must be a vector of length 2")
+	if(!is(cM_len, "numeric"))
+		stop("Invalid parameter: cM_len must be a numeric vector")
+	if(length(cM_len) != 2)
+		stop("cM_len must be a vector of length 2")
+	if(seed==0)
+		seed=as.integer(Sys.time())
+	if(is.null(physical_map_Fa) & is.null(physical_map_Mo)){
+		message("No map function specified to convert genetic distance to physical. Assumed constant along length of chromosome")
+		convert = 0L
+		bp_map_FA = 0
+		cm_map_FA = 0
+		bp_map_MO = 0
+		cm_map_MO = 0
+	}
+	else{
+		#need to check that the maps are valid
+		convert = 1L
+		check_map(physical_map_Fa, BP_len, cM_len)
+		check_map(physical_map_Mo, BP_len, cM_len)
+		bp_map_FA = as.integer(physical_map_Fa$BP)
+		cm_map_FA = as.numeric(physical_map_Fa$cM)
+		bp_map_MO = as.integer(physical_map_Mo$BP)
+		cm_map_MO = as.numeric(physical_map_Mo$cM)
+	}
+
+	p_IBD_matrix = double(length(pro)^2)
+
+	.Call("gen_drop_IBD", gen@.Data, pro, length(pro), ancestors, length(ancestors), model_params, cM_len/100, as.integer(model), 
+			convert, as.integer(BP_len), as.integer(bp_map_FA), cm_map_FA, as.integer(bp_map_MO), cm_map_MO, 
+			as.integer(seed), p_IBD_matrix, package="GENLIB")
+	
+	dim(p_IBD_matrix) <- c(length(pro), length(pro))
+	return (p_IBD_matrix)
+}
 # gen.simuHaplo = function (gen, pro=NULL, ancestors=NULL, simulNo = 1, model =1, model_params, cM_len, 
 # 							BP_len, physical_map_Mo = NULL, physical_map_Fa = NULL, seed= 0, all_nodes =0, outDir = getwd()){
 # 	if(!is(gen, "GLgen"))

@@ -71,6 +71,11 @@ GENLIBDLL_DLL_API(SEXP) SPLUSCGCumuldirect(SEXP matriceCG, SEXP lNProposant, SEX
 GENLIBDLL_DLL_API(SEXP) gen_drop(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, SEXP sAncestors, SEXP sLenAncestors, SEXP sProbRecomb, 
 					SEXP sMorgan_Len, SEXP smodel, SEXP s_convert, SEXP sBP, SEXP s_bp_map_FA, SEXP s_cm_map_FA, SEXP s_bp_map_MO, SEXP s_cm_map_MO, 
 					SEXP out, SEXP mapfile_path, SEXP pedfile_path, SEXP sSeed, SEXP R_matrix);
+
+GENLIBDLL_DLL_API(SEXP) gen_drop_IBD(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, SEXP sAncestors, SEXP sLenAncestors, SEXP sProbRecomb, 
+					SEXP sMorgan_Len, SEXP smodel, SEXP s_convert, SEXP sBP, SEXP s_bp_map_FA, SEXP s_cm_map_FA, SEXP s_bp_map_MO, SEXP s_cm_map_MO, 
+					SEXP sSeed, SEXP R_matrix);
+
 // GENLIBDLL_DLL_API(SEXP) SPLUSSimulHaplo(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, SEXP sAncestors, SEXP sLenAncestors, SEXP snSimul, SEXP sProbRecomb, 
 // 											SEXP sMorgan_Len, SEXP smodel, SEXP s_convert, SEXP sBP, SEXP s_bp_map_FA, SEXP s_cm_map_FA, SEXP s_bp_map_MO, SEXP s_cm_map_MO, 
 // 											SEXP sWD, SEXP sAll_node, SEXP sSeed);
