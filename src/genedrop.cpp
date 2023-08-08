@@ -451,6 +451,24 @@ static void recombine(haplotype* hapBegin, haplotype* hapEnd, haplotype* hapChil
 	}
 };
 
+void read_binary(genotype_map& founder_genotypes, std::ofstream& gen_bfile)
+{
+	int proID, buffer, read_int;
+	std::vector<int> segpos_vec, segnom_vec;
+	
+	gen_bfile.read(&proID, 4);
+	gen_bfile.read(&buffer, 4);
+
+	for (int i=0; i < buffer; i++){
+		gen_bfile.read(&read_int, 4);
+		segpos_vec.push_back(read_int);
+		gen_bfile.read(&read_int, 4);
+		segnom_vec.push_back(read_int);
+	}
+	gen_bfile.read(&read_int, 4);
+		
+}
+
 void pIBD_matrix(int* Genealogie, int* plProposant, int lNProposant, int* plAncetre, int lNAncetre,
 				double* probRecomb, double* Morgan_Len, int BP_len, int model,  
 				int convert, double* cm_map_FA, double* cm_map_MO, int* bp_map_FA, int* bp_map_MO, double* R_matrix, 
@@ -633,6 +651,32 @@ void pIBD_matrix(int* Genealogie, int* plProposant, int lNProposant, int* plAnce
 	}	
 	outfile.close();
 
+	//binary output file
+	std::ofstream outfile(out + ".GENLIB", ofstream::binary);
+	for(int i=0; i<lNProposant; i++){
+		haplotype *tmp;
+		bool done = false;
+		
+		outfile.write ((char*)&name, sizeof(int));
+		long bufferpos = outfile.tellp()
+		outfile.write ((char*)&buffer, sizeof(int));
+		while(not done){
+			int counter = 1;
+			outfile.write((char*) &segpos, sizeof(int));
+			outfile.write((char*) &segnom, sizeof(int));
+			if (tmp->next_segment == NULL){
+				done = true;
+				long end_block = outfile.tellp()
+				outfile.seekp(bufferpos);
+				outfile.write( (char*) &counter, sizeof(int));
+				outfile.seekp(end_block);
+			}
+			else {
+				tmp = tmp->next_segment;
+				counter++;
+			}
+		}
+	}
 	//delete haplotypes 
 	//can delete the internal haplotypes earlier to free up some memory first
 	for(int i=0; i<clesSim; i++) {
