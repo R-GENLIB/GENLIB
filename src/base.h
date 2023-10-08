@@ -250,7 +250,7 @@ struct CIndSimul
 	int allele2Pos[2];		///<EX : Allele 1 (chiffre) et allele 2 (chiffre) que l individu possede 
 	int alleleAttendu;		///<EX : Nombre d allele que l individu devrait posseder
 	
-	int clesHaplo_1, clesHaplo_2; // = {"0.1", "0.1"};	// nom.1 ou nom.2 pour les ancetres
+	int clesHaplo_1, clesHaplo_2; // = {"0.1", "0.1"};	// nom.1 ou nom.2 pour les ancetres // now is +nom, -nom
 
 	union 
 	{
