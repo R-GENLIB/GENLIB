@@ -577,9 +577,9 @@ RcppExport SEXP SPLUSCGCumuldirect(SEXP smatriceCG, SEXP slNProposant, SEXP splA
 //	DIVERS
 // *********
 
-GENLIBDLL_DLL_API(SEXP) SEXP SPLUSgene_drop(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, SEXP sAncestors, SEXP sLenAncestors, SEXP sProbRecomb, 
+RcppExport SEXP SPLUSgene_drop(SEXP sGenealogy, SEXP sProbands, SEXP sLenPro, SEXP sAncestors, SEXP sLenAncestors, SEXP sProbRecomb, 
 					SEXP sMorgan_Len, SEXP smodel, SEXP s_nSimul, SEXP s_convert, SEXP sBP, SEXP s_bp_map_FA, SEXP s_cm_map_FA, SEXP s_bp_map_MO, SEXP s_cm_map_MO, 
-					SEXP out, SEXP r_mapfile_path, SEXP r_pedfile_path, SEXP sSeed)
+					SEXP out, SEXP r_mapfile_path, SEXP r_pedfile_path, SEXP sSeed, SEXP R_matrix)
 {
 	//should rename all these variables
 	int *Genealogie, *proposant, *ancetre, *nproposant, *nancetre, *seed, *model, *nSimul;
@@ -615,13 +615,15 @@ GENLIBDLL_DLL_API(SEXP) SEXP SPLUSgene_drop(SEXP sGenealogy, SEXP sProbands, SEX
 	cm_map_FA	= REAL 	 ( l_cm_map_FA);
 	cm_map_MO 	= REAL 	 ( l_cm_map_MO);
 
+	p_IBD_matrix= REAL	    (R_matrix);
+
 	std::string out_path     = Rcpp::as<std::string>(out);
 	std::string mapfile_path = Rcpp::as<std::string>(r_mapfile_path);
 	std::string pedfile_path = Rcpp::as<std::string>(r_pedfile_path);
 
 	gene_drop(Genealogie, proposant, *nproposant, ancetre, *nancetre, 
 				probRecomb, Morgan_Len, *BP, *model, *nSimul,
-				*convert, cm_map_FA, cm_map_MO, bp_map_FA, bp_map_MO,
+				*convert, cm_map_FA, cm_map_MO, bp_map_FA, bp_map_MO, p_IBD_matrix,
 				out_path, mapfile_path, pedfile_path, *seed);	
 	return R_NilValue;
 }

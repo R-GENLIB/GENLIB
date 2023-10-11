@@ -114,7 +114,7 @@ check_map = function(df, BP_len, cM_len){
 }
 
 gen.drop = function (gen, pro=NULL, ancestors=NULL, model =1, model_params, cM_len, 
-					BP_len, nsimul = 100, physical_map_Mo = NULL, physical_map_Fa = NULL, 
+					BP_len, nSimul = 100, physical_map_Mo = NULL, physical_map_Fa = NULL, 
 					mapfile_path, pedfile_path, out = NULL, seed=0)
 {
 	if(!is(gen, "GLgen"))
@@ -162,10 +162,14 @@ gen.drop = function (gen, pro=NULL, ancestors=NULL, model =1, model_params, cM_l
 
 	message("seed: ", seed, "\n")
 
+	p_IBD_matrix = double(length(pro)^2)
 
 	.Call("SPLUSgene_drop", gen@.Data, pro, length(pro), ancestors, length(ancestors), model_params, cM_len/100, as.integer(model), as.integer(nSimul),
-			convert, as.integer(BP_len), as.integer(bp_map_FA), cm_map_FA, as.integer(bp_map_MO), cm_map_MO, 
+			convert, as.integer(BP_len), as.integer(bp_map_FA), cm_map_FA, as.integer(bp_map_MO), cm_map_MO, p_IBD_matrix,
 			out, mapfile_path, pedfile_path, as.integer(seed), p_IBD_matrix, package="GENLIB")
+	
+	dim(p_IBD_matrix) <- c(length(pro), length(pro))
+	return (p_IBD_matrix)
 }
 
 # gen.dropIBD = function (gen, pro=NULL, ancestors=NULL, model =1, model_params, cM_len, 

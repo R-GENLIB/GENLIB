@@ -28,7 +28,9 @@ static void no_convert(int& nbrecomb, double* CO_array, const double& Morgan_len
 static void convert1(int& nbrecomb, double* CO_array, const double& Morgan_len, const int& bp_len, int* bp_map, double* cm_map, int* BP_array);
 static void read_ped_file(const std::string& ped_filepath, genotype_map& geno_map, const int& n_markers);
 static void read_map_file(const std::string& map_filepath, std::vector<int>& vec_pos);
-static void convert_hap(std::vector<char>& marker_vec, haplotype* hap, const genotype_map& founder_geno_map, const std::vector<int>& map, std::vector<int>& founderID_vec, std::unordered_map<int, int>& founderID_map);
+static void convert_hap(std::vector<char>& marker_vec, haplotype* hap, const genotype_map& founder_geno_map, const std::vector<int>& map, std::vector<int>& founderID_vec, std::unordered_map<int, int>& founderID_map, std::ofstream& logfile);
+int check_p_IBD(haplotype* hap1,  haplotype* hap2, const int& BP_len);
+int check_overlaps(const int& Lpos1, const int& Rpos1, const int& Lpos2, const int& Rpos2);
 
 // read_map_file, read_ped_file, and convert_hap should all later be put into a seperate i/o src file
 static void read_map_file(const std::string& map_filepath, std::vector<int>& vec_pos){
@@ -63,23 +65,54 @@ static void read_ped_file(const std::string& ped_filepath, genotype_map& geno_ma
 };
 
 static void convert_hap(std::vector<char>& marker_vec, haplotype* hap, const genotype_map& founder_geno_map, const std::vector<int>& map,
-						std::vector<int>& founderID_vec, std::unordered_map<int, int>& founderID_map){
+						std::vector<int>& founderID_vec, std::unordered_map<int, int>& founderID_map, std::ofstream& logfile){
 	int marker_pos;
 	int n_markers = map.size(); //****	
 	haplotype* tmp = hap;
-	int founder_ID = founderID_vec.at(founderID_map.at(tmp->hap))
+	int founder_ID = founderID_vec.at(founderID_map.at(tmp->hap));
 	const char* founder_hap = founder_geno_map.at(founder_ID).data();
 
 	for (int i=0; i < n_markers; i++){
 		marker_pos = map[i]; //map is the vector of BP positions from the map file
-		if (marker_pos > tmp->pos){  //the strict greater than means we are right inclusive
+		while (marker_pos > tmp->pos){  //the strict greater than means we are right inclusive
+			logfile << tmp->hap << " " << tmp->pos << " " ;
 			tmp = tmp->next_segment;
+			founder_ID = founderID_vec.at(founderID_map.at(tmp->hap));
 			founder_hap = founder_geno_map.at(tmp->hap).data();
 		}
 		marker_vec[i] = founder_hap[i];
+		logfile << "\n";
 	}
 };
 
+//returns the BP length of IBD shared segments for the pair
+int check_p_IBD(haplotype* hap1,  haplotype* hap2, const int& BP_len){
+	haplotype* tmp1 = hap1;
+	haplotype* tmp2 = hap2;
+	int Lpos1=0, Lpos2=0, Rpos1, Rpos2;
+
+	//total amount of IBD sharing (in BP) for the pair of haplotypes
+	int total_IBD = 0; 
+	while ((tmp1->pos != BP_len) | (tmp2->pos != BP_len)){
+		Rpos1 = tmp1->pos;
+		Rpos2 = tmp2->pos;
+
+		if (tmp1->hap == tmp2->hap) {total_IBD = total_IBD + check_overlaps(Lpos1, Rpos1, Lpos2, Rpos2);}
+		if (Lpos2 > Rpos1) {Lpos1 = Rpos1; tmp1 = tmp1->next_segment;}
+		else if (Lpos1 > Rpos2) {Lpos2 = Rpos2; tmp2 = tmp2->next_segment;}
+		else {
+			if (Rpos2 > Rpos1) {Lpos1 = Rpos1; tmp1 = tmp1->next_segment;}
+			else {Lpos2 = Rpos2; tmp2 = tmp2->next_segment;}
+		}
+	} 
+	return total_IBD;
+};
+
+int check_overlaps(const int& Lpos1, const int& Rpos1, const int& Lpos2, const int& Rpos2){
+	// then its non-overlapping
+	if ((Lpos1 >= Rpos2) || (Lpos2 >= Rpos1)) return 0;
+	else return ((Rpos1 > Rpos2 ? Rpos2 : Rpos1) - (Lpos1 > Lpos2 ? Lpos1 : Lpos2) );
+};
 
 //should make static, and then store the crossover vector as a data member
 // instead of using a fx pointer to the member fx then make the gen_crossovers fx
@@ -279,7 +312,6 @@ void Crossovers::Gamma_CO(const int &sex, double *param, double *Morgan_len, int
 	}
 }
 
-
 static void no_convert(int& nbrecomb, double* CO_array, const double& Morgan_len, const int& bp_len, int* bp_map, double* cm_map, int* BP_array){
 	for(int k=0; k<nbrecomb; k++){
 		BP_array[k] = (int) (CO_array[k]*bp_len);
@@ -430,7 +462,7 @@ static void recombine(haplotype* hapBegin, haplotype* hapEnd, haplotype* hapChil
 
 void gene_drop(int* Genealogie, int* plProposant, int lNProposant, int* plAncetre, int lNAncetre,
 				double* probRecomb, double* Morgan_Len, int BP_len, int model,  int nSimul,
-				int convert, double* cm_map_FA, double* cm_map_MO, int* bp_map_FA, int* bp_map_MO,
+				int convert, double* cm_map_FA, double* cm_map_MO, int* bp_map_FA, int* bp_map_MO, double* R_matrix, 
 				const std::string& out, const std::string& map_filepath, const std::string& ped_filepath, int seed) 
 {
 	try{
@@ -563,13 +595,14 @@ void gene_drop(int* Genealogie, int* plProposant, int lNProposant, int* plAncetr
 	founderID_map.reserve(lNAncetre * 2);
 
 	for(i=0; i<lNAncetre; i++){
-		founderID_vec[2*i    ] = plAncetre[i]
-		founderID_vec[2*i + 1] = -1 * plAncetre[i]
-		
-		founderID_map[plAncetre[i]     ] = 2*i
-		founderID_map[plAncetre[i] * -1] = 2*i + 1
+		founderID_vec[2*i    ] = plAncetre[i];
+		founderID_vec[2*i + 1] = -1 * plAncetre[i];
+		founderID_map[plAncetre[i]     ] = 2*i;
+		founderID_map[plAncetre[i] * -1] = 2*i + 1;
 	}
 
+	//log file
+	std::ofstream logfile("log.txt");
 	//run simulation
 	for(int csimul=0;csimul<nSimul; csimul++){
 		int clesSim = cleFixe;
@@ -595,9 +628,10 @@ void gene_drop(int* Genealogie, int* plProposant, int lNProposant, int* plAncetr
 		std::vector<char> geno1(n_markers), geno2(n_markers);
 		//write the proband genotypes to ped file
 		for(i=0; i<lNProposant; i++){
+			logfile << NoeudPro[i]->nom << '\n';
 			//convert the proband haplotypes into the genotype vectors geno1 and geno2
-			convert_hap(geno1, hapRef.at(NoeudPro[i]->clesHaplo_1), founder_genotypes, map_pos, founderID_vec, founderID_map)
-			convert_hap(geno2, hapRef.at(NoeudPro[i]->clesHaplo_2), founder_genotypes, map_pos, founderID_vec, founderID_map)
+			convert_hap(geno1, hapRef.at(NoeudPro[i]->clesHaplo_1), founder_genotypes, map_pos, founderID_vec, founderID_map, logfile);
+			convert_hap(geno2, hapRef.at(NoeudPro[i]->clesHaplo_2), founder_genotypes, map_pos, founderID_vec, founderID_map, logfile);
 			
 			//put the first 6 col of pedfile
 			outfile << "0\t" << NoeudPro[i]->nom << "\t0\t0\t-9\t-9\t";
@@ -607,6 +641,27 @@ void gene_drop(int* Genealogie, int* plProposant, int lNProposant, int* plAncetr
 			outfile << std::endl;
 		}	
 		outfile.close();
+
+		//record the proportion IBD between all probands
+		//write to the R matrix
+		haplotype *h1_1, *h1_2, *h2_1, *h2_2;
+		int total_IBD;
+		for(int i=0;i<lNProposant;i++){
+			h1_1 = hapRef.at(NoeudPro[i]->clesHaplo_1);
+			h1_2 = hapRef.at(NoeudPro[i]->clesHaplo_2);
+
+			for(int j = 0; j < i; j++){
+				total_IBD = R_matrix[i * lNProposant + j];
+				h2_1 = hapRef.at(NoeudPro[j]->clesHaplo_1);
+				h2_2 = hapRef.at(NoeudPro[j]->clesHaplo_2);
+				total_IBD = total_IBD + check_p_IBD(h1_1, h2_1, BP_len);
+				total_IBD = total_IBD + check_p_IBD(h1_1, h2_2, BP_len);
+				total_IBD = total_IBD + check_p_IBD(h1_2, h2_1, BP_len);
+				total_IBD = total_IBD + check_p_IBD(h1_2, h2_2, BP_len);
+				R_matrix[i * lNProposant + j] = total_IBD/4;
+			}
+		}
+
 		//shuffle the founder genotypes for next iteration
 		std::shuffle(std::begin(founderID_vec), std::end(founderID_vec), my_rng);
 

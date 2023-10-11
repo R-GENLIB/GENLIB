@@ -1,6 +1,7 @@
 .gitignore
 /docs
 /src/.vscode
+/src/genedrop2.cpp
 .vscode
 ^_pkgdown\.yml$
 ^docs$
