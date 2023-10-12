@@ -138,10 +138,10 @@ gen.drop = function (gen, pro=NULL, ancestors=NULL, model =1, model_params, cM_l
 	if(is.null(physical_map_Fa) & is.null(physical_map_Mo)){
 		message("No map function specified to convert genetic distance to physical. Assumed constant along length of chromosome")
 		convert = 0L
-		bp_map_FA = 0
-		cm_map_FA = 0
-		bp_map_MO = 0
-		cm_map_MO = 0
+		bp_map_FA = 0L
+		cm_map_FA = 0L
+		bp_map_MO = 0L
+		cm_map_MO = 0L
 	}
 	else{
 		#need to check that the maps are valid
@@ -165,7 +165,7 @@ gen.drop = function (gen, pro=NULL, ancestors=NULL, model =1, model_params, cM_l
 	p_IBD_matrix = double(length(pro)^2)
 
 	.Call("SPLUSgene_drop", gen@.Data, pro, length(pro), ancestors, length(ancestors), model_params, cM_len/100, as.integer(model), as.integer(nSimul),
-			convert, as.integer(BP_len), as.integer(bp_map_FA), cm_map_FA, as.integer(bp_map_MO), cm_map_MO, p_IBD_matrix,
+			convert, as.integer(BP_len), as.integer(bp_map_FA), cm_map_FA, as.integer(bp_map_MO), cm_map_MO,
 			out, mapfile_path, pedfile_path, as.integer(seed), p_IBD_matrix, package="GENLIB")
 	
 	dim(p_IBD_matrix) <- c(length(pro), length(pro))

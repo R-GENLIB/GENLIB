@@ -66,16 +66,31 @@ static void read_ped_file(const std::string& ped_filepath, genotype_map& geno_ma
 
 static void convert_hap(std::vector<char>& marker_vec, haplotype* hap, const genotype_map& founder_geno_map, const std::vector<int>& map,
 						std::vector<int>& founderID_vec, std::unordered_map<int, int>& founderID_map, std::ofstream& logfile){
+	logfile << "check3.5" << std::endl;
 	int marker_pos;
 	int n_markers = map.size(); //****	
 	haplotype* tmp = hap;
+
+	logfile << tmp->hap <<std::endl;
+	logfile << founderID_map.at(tmp->hap) << std::endl;
+	logfile << founderID_vec.at(founderID_map.at(tmp->hap)) << std::endl;
 	int founder_ID = founderID_vec.at(founderID_map.at(tmp->hap));
+
+	logfile << founder_geno_map.at(founder_ID).data() << std::endl;
+
 	const char* founder_hap = founder_geno_map.at(founder_ID).data();
+
+	logfile << "founder: " << tmp -> hap << std::endl;
+	logfile << founderID_vec.at(founderID_map.at(tmp->hap)) << std::endl;
+	logfile << founder_geno_map.at(founder_ID).data()[0] << std::endl;
+
+
 
 	for (int i=0; i < n_markers; i++){
 		marker_pos = map[i]; //map is the vector of BP positions from the map file
+		logfile << "marker: " << marker_pos << " " ;
 		while (marker_pos > tmp->pos){  //the strict greater than means we are right inclusive
-			logfile << tmp->hap << " " << tmp->pos << " " ;
+			logfile << tmp->hap << " " << tmp->pos << std::endl ;
 			tmp = tmp->next_segment;
 			founder_ID = founderID_vec.at(founderID_map.at(tmp->hap));
 			founder_hap = founder_geno_map.at(tmp->hap).data();
@@ -467,6 +482,9 @@ void gene_drop(int* Genealogie, int* plProposant, int lNProposant, int* plAncetr
 {
 	try{
 
+	//log file
+	std::ofstream logfile("log.txt");
+
 	//CREATION DE TABLEAU D'INDIVIDU
 	int lNIndividu;
 	CIndSimul *Noeud=NULL;
@@ -576,6 +594,7 @@ void gene_drop(int* Genealogie, int* plProposant, int lNProposant, int* plAncetr
 	
 	std::uniform_real_distribution<> u_dist(0, 1);
 	
+	logfile << "check1" << std::endl;
 	//read in the map file, get positions and # markers
 	std::vector<int> map_pos;
 	read_map_file(map_filepath, map_pos);
@@ -588,11 +607,14 @@ void gene_drop(int* Genealogie, int* plProposant, int lNProposant, int* plAncetr
 	//read ped file to get founder genotypes
 	read_ped_file(ped_filepath, founder_genotypes, n_markers);
 
+	logfile << "check2" << std::endl;
 	//make vector and map of founder IDs so can shuffle between simulations
 	std::vector<int> founderID_vec ;
 	std::unordered_map<int, int> founderID_map;
-	founderID_vec.reserve(lNAncetre * 2);
+	founderID_vec.resize(lNAncetre * 2);
 	founderID_map.reserve(lNAncetre * 2);
+
+	logfile << "check3" << std::endl;
 
 	for(i=0; i<lNAncetre; i++){
 		founderID_vec[2*i    ] = plAncetre[i];
@@ -601,10 +623,21 @@ void gene_drop(int* Genealogie, int* plProposant, int lNProposant, int* plAncetr
 		founderID_map[plAncetre[i] * -1] = 2*i + 1;
 	}
 
-	//log file
-	std::ofstream logfile("log.txt");
+	for (auto const& i : founderID_map){
+		logfile << i.first << " " << i.second << " " ;
+	}
+
+	logfile << "\n\n------------------\n\n" ;
+	logfile << "vector size: " << founderID_vec.size() << "\n";
+	logfile << "First element: " << founderID_vec[0] << "\n" ;
+
+	for (auto const& i : founderID_vec){
+		logfile << i << " ";
+	}
+
 	//run simulation
 	for(int csimul=0;csimul<nSimul; csimul++){
+		logfile << "--------------\nsim " << csimul << std::endl;
 		int clesSim = cleFixe;
 		for(int i=0;i<NOrdre;i++) {
 			//Simulate meiosis in the parents, store the location of crossovers (in genetic distance scaled to [0,1]) in CO_array.
@@ -621,13 +654,17 @@ void gene_drop(int* Genealogie, int* plProposant, int lNProposant, int* plAncetr
 			pHap2 = u_dist(my_rng);
 			makeRecombM(Ordre[i], &hapRef, pHap2, nbRecomb2, BP_CO_arrayM, clesSim, BP_len);
 		}
+		logfile << "check1" << std::endl;
 
 		//create output file
 		std::ofstream outfile(out + "_" + std::to_string(csimul) + ".ped");
 		//create vectors to hold the proband genotypes
 		std::vector<char> geno1(n_markers), geno2(n_markers);
+		logfile << "check2" << std::endl;
+
 		//write the proband genotypes to ped file
 		for(i=0; i<lNProposant; i++){
+			logfile << "check3" << std::endl;
 			logfile << NoeudPro[i]->nom << '\n';
 			//convert the proband haplotypes into the genotype vectors geno1 and geno2
 			convert_hap(geno1, hapRef.at(NoeudPro[i]->clesHaplo_1), founder_genotypes, map_pos, founderID_vec, founderID_map, logfile);
@@ -642,6 +679,7 @@ void gene_drop(int* Genealogie, int* plProposant, int lNProposant, int* plAncetr
 		}	
 		outfile.close();
 
+		logfile << "check4" << std::endl;
 		//record the proportion IBD between all probands
 		//write to the R matrix
 		haplotype *h1_1, *h1_2, *h2_1, *h2_2;
@@ -661,6 +699,7 @@ void gene_drop(int* Genealogie, int* plProposant, int lNProposant, int* plAncetr
 				R_matrix[i * lNProposant + j] = total_IBD/4;
 			}
 		}
+		logfile << "check5" << std::endl;
 
 		//shuffle the founder genotypes for next iteration
 		std::shuffle(std::begin(founderID_vec), std::end(founderID_vec), my_rng);
