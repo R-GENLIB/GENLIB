@@ -1,5 +1,5 @@
 \name{GenlibR-package}
-\alias{GenlibR-package}
+\alias{}
 \docType{package}
 \title{
 Genealogical Data Analysis
